@@ -54,6 +54,13 @@ Start with the **[English user guide](USERGUIDE.md)** or **[中文用户指南](
 for recommended inference settings, prompt examples, layout input formats, and
 LoRA training guidance.
 
+### Batch inference with reusable prompt encodings
+
+Use `python -m moss_batch` to encode prompts once, generate in a separate process
+without loading the text encoder, and resume interrupted batches. See the
+[staged inference guide](docs/staged_inference.md) and
+[JSONL example](examples/staged_jobs.jsonl).
+
 <a id="comfyui"></a>
 
 ## ComfyUI
