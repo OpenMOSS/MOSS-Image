@@ -32,7 +32,10 @@ from inference_runtime import (
     DEFAULT_MODEL,
     configure_pipeline,
     cuda_budget_gib,
+    default_device,
+    empty_device_cache,
     generate_with_progress,
+    is_out_of_memory,
     model_source,
     set_scheduler,
 )
@@ -88,6 +91,8 @@ def discover_models(root):
 
 def profile_defaults(profile, vram_gb=None):
     if profile == "auto":
+        if vram_gb is None and default_device() == "mps":
+            vram_gb = torch.mps.recommended_max_memory() / 1024**3
         if vram_gb is None:
             vram_gb = cuda_budget_gib() if torch.cuda.is_available() else 24
         profile = "16gb" if vram_gb < 20 else "24gb" if vram_gb < 40 else "48gb"
@@ -217,8 +222,11 @@ def parse_parameters(parameters, version):
 
 
 def load_pipeline(model, offload, compile_transformer=False, local_files_only=False):
-    if not torch.cuda.is_available():
-        raise ValueError("A CUDA GPU is required for generation. The interface can be previewed without one.")
+    if default_device() == "cpu":
+        raise ValueError(
+            "A CUDA or Apple Silicon (MPS) GPU is required for generation. "
+            "The interface can be previewed without one."
+        )
     pipe = load_hf_pipeline(model, local_files_only=local_files_only)
     return configure_pipeline(pipe, offload=offload, compile_transformer=compile_transformer)
 
@@ -238,8 +246,7 @@ class ModelRunner:
             self.pipe = None
             self.key = None
             gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            empty_device_cache()
         return "Model released. It will load again on the next generation."
 
     def generate(self, model, config, progress=None):
@@ -295,7 +302,9 @@ class ModelRunner:
                     **config.pipeline_kwargs(),
                     generator=torch.Generator("cpu").manual_seed(config.seed),
                 ).images
-            except torch.cuda.OutOfMemoryError as exc:
+            except (torch.OutOfMemoryError, RuntimeError) as exc:
+                if not is_out_of_memory(exc):
+                    raise
                 self.unload()
                 raise ValueError(
                     "GPU memory exhausted. Try fewer/smaller images or a lower-memory offload mode."
@@ -339,7 +348,8 @@ class ModelRunner:
                     name: importlib.metadata.version(name)
                     for name in ("torch", "diffusers", "transformers", "accelerate")
                 },
-                "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+                "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available()
+                else "Apple MPS" if default_device() == "mps" else None,
                 "elapsed_seconds": round(time.monotonic() - start, 3),
                 "images": [Path(p).name for p in paths],
             }

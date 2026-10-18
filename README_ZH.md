@@ -201,6 +201,12 @@ python gradio_app.py --model OpenMOSS-Team/MOSS-Image-Base
 显存不足时，选择 Sequential 或减小图像尺寸。
 Compile DiT 默认关闭，Sequential 模式下不可用。
 
+**Apple Silicon（MPS）。** 在没有 CUDA 的 Mac 上，Python 运行时与 Gradio 应用使用 MPS 后端，
+并将模型常驻于统一内存（1024×1024 时峰值约 37 GB，建议 64 GB 内存）。在 Python 中，将
+`pipe.to("cuda")` 替换为 `inference_runtime.configure_pipeline(pipe)`，它会应用所需的 MPS 修复；
+直接调用 `pipe.to("mps")` 会因 MPS 不支持 float64 而失败。M4 Pro 上每步约 19 秒，15 步约 5 分钟；在我们的测试中，15–30 步即可稳定渲染
+提示词中要求的文字。
+
 <a id="layout-generation"></a>
 
 ## 📐 Layout 布局生成

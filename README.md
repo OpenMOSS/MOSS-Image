@@ -206,6 +206,14 @@ Select Memory mode in Gradio's Advanced settings:
 If GPU memory is insufficient, select Sequential or reduce image size.
 Compile DiT is disabled by default and unavailable in Sequential mode.
 
+**Apple Silicon (MPS).** On Macs without CUDA, the Python runtime and Gradio app run on
+the MPS backend and keep the model resident in unified memory (about 37 GB peak at
+1024×1024, so 64 GB is recommended). In Python, replace `pipe.to("cuda")` with
+`inference_runtime.configure_pipeline(pipe)`, which applies the required MPS fixes;
+a plain `pipe.to("mps")` fails because MPS has no float64 support.
+Expect roughly 19 s per step on an M4 Pro, or about 5 minutes at 15 steps; 15–30 steps
+render requested text reliably in our tests.
+
 <a id="layout-generation"></a>
 
 ## 📐 Layout-to-image generation
