@@ -14,6 +14,7 @@ from comfy.supported_models_base import BASE, ClipTarget
 from comfy.text_encoders import hunyuan_video
 
 from .model import MOSSImageTransformer
+from .quant import unfuse_block_qkv
 from .text_encoder import MOSSImageTokenizer, te
 
 DTYPES = {
@@ -100,6 +101,7 @@ def load_model_state(
         state = stripped
         if operations is None:
             state, metadata = utils.convert_old_quants(state, "", metadata=metadata)
+    state = unfuse_block_qkv(state)
     config = model_config(state)
     config.quant_config = utils.detect_layer_quantization(state, "")
     if operations is not None:
