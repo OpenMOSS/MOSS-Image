@@ -1,0 +1,6 @@
+# Versions used on the maintainer's M1 Max / 32 GB Mac.
+torch==2.14.1
+diffusers==0.41.0
+transformers==5.20.1
+accelerate==1.15.0
+gradio==6.30.0

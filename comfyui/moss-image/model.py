@@ -199,9 +199,11 @@ class MOSSImageTransformer(nn.Module):
         times = times.expand(batch)
         # Training computes the sinusoid in float64 and feeds float32 into its MLP.
         half = self.freq_dim // 2
-        freq = 10000 ** (-torch.arange(half, device=times.device, dtype=torch.float64) / half)
-        phase = times.double()[:, None] * freq
-        embedding = torch.cat((phase.cos(), phase.sin()), -1).float()
+        # MPS has no float64; keep the training sinusoid precision on CPU.
+        sinusoid_device = torch.device("cpu") if times.device.type == "mps" else times.device
+        freq = 10000 ** (-torch.arange(half, device=sinusoid_device, dtype=torch.float64) / half)
+        phase = times.to(sinusoid_device).double()[:, None] * freq
+        embedding = torch.cat((phase.cos(), phase.sin()), -1).float().to(times.device)
         time = self.time_embedding(embedding.to(self.time_embedding[0].weight.dtype)).float()
         mod = self.shared_block_modulation(time.to(self.shared_block_modulation.weight.dtype)).view(
             batch, 6, -1

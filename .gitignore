@@ -16,10 +16,8 @@ outputs/
 .env.*
 *credential*
 github_ssh_public_key.txt
-/tests/
 /.github/workflows/tests.yml
 /examples/
-/docs/
 /export_diffusers.py
 .ruff_cache/
 /ckpt/

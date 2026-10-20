@@ -21,6 +21,7 @@ from uuid import uuid4
 
 import torch
 
+import mps_runtime
 from gradio_presets import (
     PIXELS,
     fit_size,
@@ -217,8 +218,12 @@ def parse_parameters(parameters, version):
 
 
 def load_pipeline(model, offload, compile_transformer=False, local_files_only=False):
+    if mps_runtime.is_available():
+        if compile_transformer:
+            raise ValueError("Compile DiT is unavailable on Apple silicon. Disable it to use staged MPS inference.")
+        return mps_runtime.load_pipeline(model, local_files_only=local_files_only)
     if not torch.cuda.is_available():
-        raise ValueError("A CUDA GPU is required for generation. The interface can be previewed without one.")
+        raise ValueError("A CUDA GPU or Apple silicon is required for generation. The interface can be previewed without one.")
     pipe = load_hf_pipeline(model, local_files_only=local_files_only)
     return configure_pipeline(pipe, offload=offload, compile_transformer=compile_transformer)
 
@@ -240,6 +245,7 @@ class ModelRunner:
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+            mps_runtime.empty_cache()
         return "Model released. It will load again on the next generation."
 
     def generate(self, model, config, progress=None):
@@ -300,6 +306,11 @@ class ModelRunner:
                 raise ValueError(
                     "GPU memory exhausted. Try fewer/smaller images or a lower-memory offload mode."
                 ) from exc
+            except Exception:
+                # A failed MPS prompt stage leaves the pipeline without its DiT; reload it next time.
+                if self.pipe is not None and self.pipe.transformer is None:
+                    self.unload()
+                raise
             report(0, desc="Saving images and parameters")
             folder = self.output_dir / uuid4().hex
             folder.mkdir(parents=True, exist_ok=True)
@@ -318,6 +329,10 @@ class ModelRunner:
                         p for p in (root / "tokenizer").iterdir() if p.suffix in (".json", ".jinja", ".txt")
                     )
                 )
+            # On MPS the pipeline class is mps_runtime's wrapper around the bundle's pipeline source.
+            pipeline_file = getattr(self.pipe, "pipeline_file", None)
+            wrapper = Path(mps_runtime.__file__) if pipeline_file else None
+            pipeline_file = Path(pipeline_file or inspect.getfile(type(self.pipe)))
             record = {
                 "schema_version": 2,
                 "model": root.name if root.is_dir() else model,
@@ -325,11 +340,10 @@ class ModelRunner:
                 "pipeline_module": type(self.pipe).__module__,
                 "parameters": asdict(config),
                 "sampler": "Euler",
-                "weight_dtype": "bfloat16",
+                "weight_dtype": str(self.pipe.transformer.dtype).removeprefix("torch."),
                 "vae_dtype": "float32",
-                "pipeline_sha256": hashlib.sha256(
-                    Path(inspect.getfile(type(self.pipe))).read_bytes()
-                ).hexdigest(),
+                "pipeline_sha256": hashlib.sha256(pipeline_file.read_bytes()).hexdigest(),
+                "mps_runtime_sha256": hashlib.sha256(wrapper.read_bytes()).hexdigest() if wrapper else None,
                 "model_config_sha256": {
                     str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in configs
@@ -339,6 +353,7 @@ class ModelRunner:
                     name: importlib.metadata.version(name)
                     for name in ("torch", "diffusers", "transformers", "accelerate")
                 },
+                "device": "cuda" if torch.cuda.is_available() else "mps" if mps_runtime.is_available() else "cpu",
                 "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
                 "elapsed_seconds": round(time.monotonic() - start, 3),
                 "images": [Path(p).name for p in paths],
@@ -376,6 +391,9 @@ def build_app(
             choices.append(model)
     initial = model or (choices[0] if choices else None)
     offload_default, height_default, width_default = profile_defaults(profile)
+    on_mps = mps_runtime.is_available()
+    if on_mps:
+        offload_default = "model"
     pixels_default, ratio_default = size_selection(width_default, height_default)
     min_budget, max_budget = PIXELS[0] / 1048576, PIXELS[-1] / 1048576
     defaults = GenerationConfig()
@@ -528,19 +546,20 @@ def build_app(
                             shift = gr.Number(value=defaults.shift, label="Shift", minimum=0.01)
                         with gr.Row():
                             offload = gr.Dropdown(
-                                choices=[
+                                choices=[("Staged · Apple silicon", "model")] if on_mps else [
                                     ("GPU resident", "none"),
                                     ("Component", "model"),
                                     ("Sequential · fallback", "sequential"),
                                 ],
                                 value=offload_default,
+                                interactive=not on_mps,
                                 label="Memory mode",
                                 scale=2,
                                 min_width=140,
                             )
                             compile_transformer = gr.Checkbox(
                                 value=False,
-                                interactive=offload_default != "sequential",
+                                interactive=not on_mps and offload_default != "sequential",
                                 label="Compile DiT",
                                 scale=0,
                                 min_width=0,
@@ -733,7 +752,7 @@ def build_app(
             )
 
         def update_compile(mode):
-            if mode == "sequential":
+            if on_mps or mode == "sequential":
                 return gr.update(value=False, interactive=False)
             return gr.update(interactive=True)
 

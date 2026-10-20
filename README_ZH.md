@@ -142,6 +142,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Apple Silicon / MPS
+
+[Apple Silicon Mac 安装与限制](docs/macos_zh.md) · M1 Max / 32GB
+
 <a id="python"></a>
 
 ### 🐍 Python
