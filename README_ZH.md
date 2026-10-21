@@ -80,6 +80,12 @@
 推荐推理参数、提示词示例、布局输入格式和 LoRA 训练建议，见
 **[中文用户指南](USERGUIDE_ZH.md)** 或 **[English user guide](USERGUIDE.md)**。
 
+### 复用提示词编码的批量推理
+
+使用 `python -m moss_batch` 编码提示词，再在独立进程中生成图像，无需在生成阶段
+加载文本编码器，并支持中断后继续。使用方法见[分阶段推理指南](docs/staged_inference_zh.md)
+和 [JSONL 示例](examples/staged_jobs.jsonl)。
+
 <a id="comfyui"></a>
 
 ## ComfyUI
