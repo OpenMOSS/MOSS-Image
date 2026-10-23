@@ -223,9 +223,26 @@ python gradio_app.py --model OpenMOSS-Team/MOSS-Image-Base
 | GPU resident | 全模型驻留 GPU |
 | Component | 按需在 CPU 与 GPU 之间移动模型组件 |
 | Sequential · fallback | 更低显存占用，推理速度较慢 |
+| Low memory | DiT 权重保留在 CPU 内存，文本编码器和 VAE 权重从磁盘按需加载 |
 
 显存不足时，选择 Sequential 或减小图像尺寸。
-Compile DiT 默认关闭，Sequential 模式下不可用。
+需要降低显存和系统内存占用时，可选择 `minimal` 档位（Low memory 模式）：
+
+```bash
+python gradio_app.py --profile minimal --model OpenMOSS-Team/MOSS-Image-Base
+```
+
+`auto` 档位在 GPU 预算低于 12 GiB 时选择 `minimal`。建议将模型文件放在 SSD 上：
+DiT 权重保留在 CPU 内存，文本编码器和 VAE 权重按需加载。
+
+实测峰值（单张 1024×1024 图片，50 步）：
+
+| 资源 | 峰值占用 |
+| --- | --- |
+| PyTorch 显存分配 / 保留 | 3.65 / 3.85 GiB |
+| 任务系统内存，含文件缓存 | 14.00 GiB |
+
+Compile DiT 默认关闭，Sequential 和 Low memory 模式下不可用。
 
 <a id="layout-generation"></a>
 

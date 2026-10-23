@@ -43,7 +43,7 @@ from inference_runtime import (
 logger = logging.getLogger(__name__)
 
 COMPONENTS = ("transformer", "text_encoder", "tokenizer", "vae", "scheduler")
-PROFILES = ("auto", "16gb", "24gb", "48gb")
+PROFILES = ("auto", "minimal", "16gb", "24gb", "48gb")
 
 
 def is_model_bundle(path):
@@ -90,10 +90,15 @@ def profile_defaults(profile, vram_gb=None):
     if profile == "auto":
         if vram_gb is None:
             vram_gb = cuda_budget_gib() if torch.cuda.is_available() else 24
-        profile = "16gb" if vram_gb < 20 else "24gb" if vram_gb < 40 else "48gb"
-    return {"16gb": ("model", 1024, 1024), "24gb": ("model", 1024, 1024), "48gb": ("none", 1024, 1024)}[
-        profile
-    ]
+        profile = (
+            "minimal" if vram_gb < 12 else "16gb" if vram_gb < 20 else "24gb" if vram_gb < 40 else "48gb"
+        )
+    return {
+        "minimal": ("hybrid", 1024, 1024),
+        "16gb": ("model", 1024, 1024),
+        "24gb": ("model", 1024, 1024),
+        "48gb": ("none", 1024, 1024),
+    }[profile]
 
 
 @dataclass(frozen=True)
@@ -145,12 +150,12 @@ class GenerationConfig:
             raise ValueError("Seed must be -1 (random) or an integer from 0 to 2⁵³−1 (browser-safe range).")
         if not 1 <= self.max_sequence_length <= 4096:
             raise ValueError("Maximum text length must be between 1 and 4096.")
-        if self.offload not in ("none", "model", "sequential"):
+        if self.offload not in ("none", "model", "sequential", "hybrid"):
             raise ValueError("Unknown offload mode.")
         if not isinstance(self.compile_transformer, bool):
             raise ValueError("Compile transformer must be true or false.")
-        if self.offload == "sequential" and self.compile_transformer:
-            raise ValueError("Compile transformer is incompatible with sequential offload.")
+        if self.offload in ("sequential", "hybrid") and self.compile_transformer:
+            raise ValueError("Compile transformer is incompatible with sequential or low-memory offload.")
         if not math.isfinite(self.slg_scale) or self.slg_scale < 0:
             raise ValueError("SLG scale must be finite and nonnegative.")
         if not 0 <= self.slg_start <= self.slg_stop <= 1:
@@ -532,6 +537,7 @@ def build_app(
                                     ("GPU resident", "none"),
                                     ("Component", "model"),
                                     ("Sequential · fallback", "sequential"),
+                                    ("Low memory", "hybrid"),
                                 ],
                                 value=offload_default,
                                 label="Memory mode",
@@ -540,7 +546,7 @@ def build_app(
                             )
                             compile_transformer = gr.Checkbox(
                                 value=False,
-                                interactive=offload_default != "sequential",
+                                interactive=offload_default not in ("sequential", "hybrid"),
                                 label="Compile DiT",
                                 scale=0,
                                 min_width=0,
@@ -733,7 +739,7 @@ def build_app(
             )
 
         def update_compile(mode):
-            if mode == "sequential":
+            if mode in ("sequential", "hybrid"):
                 return gr.update(value=False, interactive=False)
             return gr.update(interactive=True)
 

@@ -20,7 +20,7 @@ ui = ["gradio>=6.30"]
 
 [tool.setuptools]
 license-files = ["LICENSE", "LICENSES/*.txt"]
-py-modules = ["inference_runtime", "gradio_app", "gradio_presets"]
+py-modules = ["inference_runtime", "memory_offload", "gradio_app", "gradio_presets"]
 packages = ["assets"]
 include-package-data = false
 
