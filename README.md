@@ -64,15 +64,25 @@
 
 ## Community projects
 
+These are unofficial, independently maintained community resources. Follow each project's setup instructions, compatibility notes, limitations, and license terms.
+
 - [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio) now supports full fine-tuning and LoRA training for **MOSS-Image-Base** and **MOSS-Image-SFT**. See the [training documentation](https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/en/Model_Details/MOSS-Image.md#model-training) and [example scripts](https://github.com/modelscope/DiffSynth-Studio/tree/main/examples/moss_image/model_training).
+
+- [Fizgig](https://github.com/shootthesound/Fizgig/blob/master/docs/MOSS_IMAGE.md) provides a training GUI and workbench for **MOSS-Image-Base**, including LoRA training and full fine-tuning, with SFT previews and ComfyUI-compatible LoRA exports. See its MOSS-Image guide for model files and settings.
 
 - [MOSS-Image-SFT-DeBand](https://huggingface.co/MATLOWAI/MOSS-Image-SFT-DeBand) by **MATLOWAI** provides community LoRAs to reduce vertical color banding in **MOSS-Image-SFT**, together with ComfyUI preset workflows. See the model card for examples, settings, and the trade-offs between stripe reduction and changes to image details.
 
-- [MOSS-Image-SFT-8-steps-dmd](https://huggingface.co/lodestones/MOSS-Image-SFT-8-steps-dmd) by **lodestones** is a community 8-step DMD distillation of **MOSS-Image-SFT**, with LoRA adapters for ComfyUI. See the model card for the latest checkpoints and usage recommendations.
+- [MOSS-Image-SFT-8-steps-dmd](https://huggingface.co/lodestones/MOSS-Image-SFT-8-steps-dmd) by **lodestones** is a **work-in-progress** community 8-step DMD distillation of **MOSS-Image-SFT**, with LoRA adapters for ComfyUI. See the model card for the latest checkpoints and usage recommendations.
 
 - [MOSS-Image-FP16-fixed](https://huggingface.co/KBlueLeaf/MOSS-Image-FP16-fixed) by **KBlueLeaf** provides FP16-compatible transformer weights for **MOSS-Image-Base** and **MOSS-Image-SFT**, using residual-stream rescaling to improve overflow headroom. Diffusers and ComfyUI formats are available; see the model card for loading instructions and adapter compatibility.
 
+- [Comfy-Org/MOSS-Image](https://huggingface.co/Comfy-Org/MOSS-Image) provides **INT8 ConvRot** weights for **MOSS-Image-Base**, **MOSS-Image-SFT**, and the **Qwen3.5-9B** text encoder in ComfyUI format. Use native [ComfyUI loaders](#comfyui) with support for these quantization formats; see the model card for file placement and workflows.
+
 - [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) by **Rkkss** adds Spectrum-style hidden-state forecasting to accelerate MOSS-Image sampling in ComfyUI, with manual and experimental adaptive nodes. See the repository for recommended sampling settings and examples.
+
+- [Moss-Image-Edit](https://huggingface.co/chinoll/Moss-Image-Edit) by **chinoll** is an image-editing LoRA. Its [ComfyUI guide](https://github.com/Chenkin-x/ComfyUI-Moss-Image-Edit/blob/main/README.en.md) covers required nodes and workflows, recommending **MOSS-Image-SFT** with one reference image; Base and multi-image editing quality need separate evaluation.
+
+- [MOSS-Image-color-depth-control](https://huggingface.co/darask0/MOSS-Image-color-depth-control) by **darask0** is an experimental color/depth adapter trained on **MOSS-Image-Base**. See the model card for input requirements and limitations, and [ComfyUI support and example workflow](https://github.com/Comfy-Org/ComfyUI/pull/17206) for the native **MOSS-Image Color/Depth Control** node.
 
 <a id="user-guide"></a>
 

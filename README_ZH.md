@@ -65,15 +65,25 @@
 
 ## 社区项目
 
+以下为作者独立维护的非官方社区资源。使用前请查阅各项目的安装说明、兼容性要求、局限及许可条款。
+
 - [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio) 现已支持 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的全参数微调与 LoRA 训练！详见[训练文档](https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/zh/Model_Details/MOSS-Image.md)和[示例脚本](https://github.com/modelscope/DiffSynth-Studio/tree/main/examples/moss_image/model_training)。
+
+- [Fizgig](https://github.com/shootthesound/Fizgig/blob/master/docs/MOSS_IMAGE.md) 提供面向 **MOSS-Image-Base** 的图形化训练与工作台，支持 LoRA 训练、全参数微调、SFT 预览，以及兼容 ComfyUI 的 LoRA 导出。模型文件及参数设置详见其 MOSS-Image 指南。
 
 - **MATLOWAI** 的 [MOSS-Image-SFT-DeBand](https://huggingface.co/MATLOWAI/MOSS-Image-SFT-DeBand) 提供用于减少 **MOSS-Image-SFT** 垂直色带的社区 LoRA，以及 ComfyUI 预设工作流。示例、参数及色带抑制与图像细节变化之间的取舍，详见模型卡。
 
-- **lodestones** 的 [MOSS-Image-SFT-8-steps-dmd](https://huggingface.co/lodestones/MOSS-Image-SFT-8-steps-dmd) 是基于 **MOSS-Image-SFT** 的社区 8 步 DMD 蒸馏项目，提供可用于 ComfyUI 的 LoRA 适配器。最新权重及使用建议详见模型卡。
+- **lodestones** 的 [MOSS-Image-SFT-8-steps-dmd](https://huggingface.co/lodestones/MOSS-Image-SFT-8-steps-dmd) 是基于 **MOSS-Image-SFT** 的社区 8 步 DMD 蒸馏项目，**仍在开发中（WIP）**，提供可用于 ComfyUI 的 LoRA 适配器。最新权重及使用建议详见模型卡。
 
 - **KBlueLeaf** 的 [MOSS-Image-FP16-fixed](https://huggingface.co/KBlueLeaf/MOSS-Image-FP16-fixed) 提供适用于 FP16 推理的 **MOSS-Image-Base** 和 **MOSS-Image-SFT** Transformer 权重，通过残差流缩放增加数值溢出余量。提供 Diffusers 和 ComfyUI 格式，加载方式及适配器兼容性详见模型卡。
 
+- [Comfy-Org/MOSS-Image](https://huggingface.co/Comfy-Org/MOSS-Image) 提供 ComfyUI 格式的 **MOSS-Image-Base**、**MOSS-Image-SFT** 及 **Qwen3.5-9B** 文本编码器的 **INT8 ConvRot** 权重。请使用支持这些量化格式的原生 [ComfyUI 加载器](#comfyui)；文件放置位置与工作流详见模型卡。
+
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
+
+- **chinoll** 的 [Moss-Image-Edit](https://huggingface.co/chinoll/Moss-Image-Edit) 是图像编辑 LoRA。[ComfyUI 指南](https://github.com/Chenkin-x/ComfyUI-Moss-Image-Edit/blob/main/README.md)介绍所需节点与工作流，建议从 **MOSS-Image-SFT** 单参考图编辑开始；Base 与多图编辑效果需单独评估。
+
+- **darask0** 的 [MOSS-Image-color-depth-control](https://huggingface.co/darask0/MOSS-Image-color-depth-control) 是在 **MOSS-Image-Base** 上训练的实验性色彩区域图／深度图控制适配器。输入要求与局限详见模型卡；原生 **MOSS-Image Color/Depth Control** 节点见 [ComfyUI 支持与示例工作流](https://github.com/Comfy-Org/ComfyUI/pull/17206)。
 
 <a id="user-guide"></a>
 
