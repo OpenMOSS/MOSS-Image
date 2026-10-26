@@ -198,10 +198,14 @@ class MOSSImageTransformer(nn.Module):
         times = torch.as_tensor(timestep, device=hidden_states.device, dtype=torch.float32).reshape(-1)
         times = times.expand(batch)
         # Training computes the sinusoid in float64 and feeds float32 into its MLP.
+        # MPS has no float64, so compute it on the CPU there. Use .cpu().double()
+        # rather than .to("cpu", torch.float64), which returns zeros on MPS.
         half = self.freq_dim // 2
-        freq = 10000 ** (-torch.arange(half, device=times.device, dtype=torch.float64) / half)
-        phase = times.double()[:, None] * freq
-        embedding = torch.cat((phase.cos(), phase.sin()), -1).float()
+        on_mps = times.device.type == "mps"
+        sinusoid_times = times.cpu() if on_mps else times
+        freq = 10000 ** (-torch.arange(half, device=sinusoid_times.device, dtype=torch.float64) / half)
+        phase = sinusoid_times.double()[:, None] * freq
+        embedding = torch.cat((phase.cos(), phase.sin()), -1).float().to(times.device)
         time = self.time_embedding(embedding.to(self.time_embedding[0].weight.dtype)).float()
         mod = self.shared_block_modulation(time.to(self.shared_block_modulation.weight.dtype)).view(
             batch, 6, -1
