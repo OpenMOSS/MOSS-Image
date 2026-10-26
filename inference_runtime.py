@@ -1,4 +1,5 @@
 """Application device placement, optional compilation, and progress reporting."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -48,13 +49,20 @@ def cuda_budget_gib():
 def configure_pipeline(pipe, offload="auto", compile_transformer=False):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if offload == "auto":
-        offload = "none" if device == "cpu" or cuda_budget_gib() >= 40 else "model"
-    if compile_transformer and offload == "sequential":
-        raise ValueError("Compilation is incompatible with sequential offload.")
+        budget = cuda_budget_gib() if device == "cuda" else 0
+        offload = "none" if device == "cpu" or budget >= 40 else "hybrid" if budget < 12 else "model"
+    if compile_transformer and offload in ("sequential", "hybrid"):
+        raise ValueError("Compilation is incompatible with sequential or low-memory offload.")
     if offload == "model":
         pipe.enable_model_cpu_offload(device=device)
     elif offload == "sequential":
         pipe.enable_sequential_cpu_offload(device=device)
+    elif offload == "hybrid":
+        if device != "cuda":
+            raise ValueError("Low-memory offload requires a CUDA GPU.")
+        from memory_offload import enable_hybrid_offload
+
+        enable_hybrid_offload(pipe, torch.device("cuda", torch.cuda.current_device()))
     elif offload == "none":
         pipe.to(device)
     else:
