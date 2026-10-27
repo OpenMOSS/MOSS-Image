@@ -75,6 +75,8 @@
 
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
+- **moss-image-community** 的 [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) 是在浏览器里编辑布局草稿的可视化工具：在画布上画文字、物体和角色框，直接在框内改字，再复制一份与提示词增强 Skill 中 `compile_prompt.py` 编译方式一致的提示词（已移植官方测试用例并全部通过）。纯前端运行，不调用生成接口，可直接打开[在线演示](https://moss-image-community.github.io/moss-image-layout-editor/?lang=zh)。
+
 <a id="user-guide"></a>
 
 ## 用户指南
