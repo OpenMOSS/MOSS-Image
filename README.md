@@ -74,6 +74,8 @@
 
 - [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) by **Rkkss** adds Spectrum-style hidden-state forecasting to accelerate MOSS-Image sampling in ComfyUI, with manual and experimental adaptive nodes. See the repository for recommended sampling settings and examples.
 
+- [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) by **moss-image-community** is a browser-based visual editor for layout drafts: draw text, object, and character boxes on a canvas, edit their text in place, and copy a prompt compiled the same way as the prompt-enhancer skill's `compile_prompt.py` (the official test cases are ported and pass). It runs entirely in the browser and makes no generation calls; try the [live demo](https://moss-image-community.github.io/moss-image-layout-editor/).
+
 <a id="user-guide"></a>
 
 ## User guide
