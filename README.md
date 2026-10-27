@@ -146,6 +146,8 @@ In this example, SFT produces clearer text grouping and a more organized whitebo
 | --- | --- |
 | ![MOSS-Image-Base](assets/comparison/base.webp) | ![MOSS-Image-SFT](assets/comparison/sft.webp) |
 
+If you see vertical banding, or miscolored edges, try [this LoRA fix](https://huggingface.co/Kijai/MOSS-image_experimental).
+
 
 <!-- MOSS-Image-Base uses a 42-layer diffusion transformer, a Qwen3.5-9B text encoder,
 and a FLUX.2 VAE. -->
