@@ -75,6 +75,8 @@
 
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
+- **gwenn-ha-dev** 的 [Siliconed](https://github.com/gwenn-ha-dev/Siliconed) 是一款免费开源的 macOS 应用，在 Apple silicon 上原生运行 **MOSS-Image-SFT**（Swift/Metal，无需 Python），配合社区 DMD LoRA 只需 8 步，16 GB 内存的 Mac 即可使用。耗时数据及各阶段与参考管线的逐项校验详见仓库。
+
 <a id="user-guide"></a>
 
 ## 用户指南

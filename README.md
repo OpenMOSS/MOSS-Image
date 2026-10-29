@@ -74,6 +74,8 @@
 
 - [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) by **Rkkss** adds Spectrum-style hidden-state forecasting to accelerate MOSS-Image sampling in ComfyUI, with manual and experimental adaptive nodes. See the repository for recommended sampling settings and examples.
 
+- [Siliconed](https://github.com/gwenn-ha-dev/Siliconed) by **gwenn-ha-dev** is a free, open-source macOS app that runs **MOSS-Image-SFT** natively on Apple silicon (Swift/Metal, no Python), in 8 steps with the community DMD LoRA, on Macs from 16 GB of memory. See the repository for timings and how each stage is checked against the reference pipeline.
+
 <a id="user-guide"></a>
 
 ## User guide
