@@ -6,7 +6,19 @@ MOSS-Image supports loading directly from a local Hugging Face / Diffusers model
 directory. Its standard ComfyUI nodes output MODEL, CLIP and VAE, using native
 sampling, SLG and memory management.
 
-## Installation
+## Native ComfyUI support (recommended)
+
+[MOSS-Image support](https://github.com/Comfy-Org/ComfyUI/pull/17095) was merged into ComfyUI on October 16, 2026. Use ComfyUI master/nightly containing commit `e087d8f6` or later and install its current `requirements.txt` dependencies; this path does not require the repository plugin. As of October 19, 2026, the `v0.41.3` release does not include this support.
+
+Use the [ComfyUI-format models and workflows](https://huggingface.co/Comfy-Org/MOSS-Image): place the diffusion model in `models/diffusion_models/`, the text encoder in `models/text_encoders/`, and the VAE in `models/vae/`. Use **Load Diffusion Model**, **CLIP Loader** with type **moss_image**, and **Load VAE**. The built-in model defaults to shift 5 and includes a **MOSS-Image Layout Prompt** node.
+
+Existing plugin workflows use different loader nodes. Import a native workflow when switching; swapping only the model loader in the old workflow is insufficient. In particular, the native model uses a different timestep multiplier, so do not carry over the plugin workflow's **ModelSamplingSD3** node unchanged. To adjust native model shift, use **ModelSamplingAuraFlow** (multiplier 1).
+
+## HF directory plugin (optional)
+
+The instructions below cover the repository plugin and its workflows. Keep it if you want to load a local Hugging Face / Diffusers directory directly or continue using an existing plugin workflow.
+
+### Installation
 
 Copy `comfyui/moss-image/` to `ComfyUI/custom_nodes/moss-image/` and restart
 ComfyUI. The native plugin uses ComfyUI's dependencies and can be installed

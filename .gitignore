@@ -16,13 +16,9 @@ outputs/
 .env.*
 *credential*
 github_ssh_public_key.txt
-/tests/*
-!/tests/test_moss_batch*.py
 /.github/workflows/tests.yml
 /examples/*
 !/examples/staged_jobs.jsonl
-/docs/*
-!/docs/staged_inference*.md
 /encodings/
 .moss-batch.lock
 /export_diffusers.py

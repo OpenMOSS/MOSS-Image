@@ -8,15 +8,21 @@
     &nbsp;
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-Image-SFT"><img alt="Hugging Face · MOSS-Image-SFT" src="https://img.shields.io/badge/🤗%20Hugging%20Face-MOSS--Image--SFT-ffc107?style=flat-square"></a>
     &nbsp;
+    <a href="https://huggingface.co/Comfy-Org/MOSS-Image"><img alt="ComfyUI Models" src="https://img.shields.io/badge/ComfyUI-Models-ffc107?style=flat-square"></a>
+    &nbsp;
     <a href="https://modelscope.cn/models/openmoss/MOSS-Image-Base"><img alt="ModelScope · MOSS-Image-Base" src="assets/modelscope-base-badge.svg"></a>
     &nbsp;
     <a href="https://modelscope.cn/models/openmoss/MOSS-Image-SFT"><img alt="ModelScope · MOSS-Image-SFT" src="assets/modelscope-sft-badge.svg"></a>
     &nbsp;
     <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-Image"><img alt="Hugging Face Spaces · Demo" src="https://img.shields.io/badge/🤗%20Spaces-Demo-4f46e5?style=flat-square"></a>
     &nbsp;
+    <a href="https://platform.mosi.cn/?utm_source=github&amp;utm_medium=readme&amp;utm_campaign=imageapi"><img alt="MOSI API Platform" src="https://img.shields.io/badge/🔌%20MOSI-API%20Platform-0f766e?style=flat-square"></a>
+    &nbsp;
     <a href="https://openmoss.github.io/MOSS-Image/"><img alt="Homepage" src="https://img.shields.io/badge/🌐%20Project-Homepage-2563eb?style=flat-square"></a>
     &nbsp;
     <a href="paper/MOSS_Image_Technical_Report.pdf"><img alt="Technical Report" src="https://img.shields.io/badge/📄%20Paper-Technical_Report-b31b1b?style=flat-square"></a>
+    &nbsp;
+    <a href="https://arxiv.org/abs/2610.23374"><img alt="arXiv: 2610.23374" src="https://img.shields.io/badge/arXiv-2610.23374-b31b1b?style=flat-square&amp;logo=arxiv&amp;logoColor=white"></a>
     &nbsp;
     <a href="https://x.com/Open_MOSS"><img alt="Follow OpenMOSS on X" src="https://img.shields.io/badge/Follow-OpenMOSS-000000?style=flat-square&amp;logo=x&amp;logoColor=white"></a>
     &nbsp;
@@ -35,6 +41,14 @@
 
 ## 动态
 
+- **[2026-10-20]** 🚀 **MOSS-Image** 系列现已上线 [MOSI API Platform](https://platform.mosi.cn/?utm_source=github&utm_medium=readme&utm_campaign=imageapi)，支持在 Playground 在线体验或通过 API 接入。
+
+- **[2026-10-19]** 📄 [MOSS-Image 技术报告](https://arxiv.org/abs/2610.23374)已在 arXiv 公开。如果我们的工作对你有帮助，欢迎在 [Hugging Face Papers 上为我们点赞（upvote）](https://huggingface.co/papers/2610.23374)，感谢支持！🤗
+
+- **[2026-10-18]** 🛠️ [KohakuMossTrainer](https://github.com/KohakuBlueleaf/KohakuMossTrainer) 已发布，支持 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的全参数微调与 LyCORIS 训练（包括 LoRA）。它提供丰富的优化器、混合精度训练（BF16/FP16/FP8/MXFP8/INT8）、多 GPU 训练（DDP/FSDP/流水线并行）、优化算子及 CPU 卸载，适配器训练最低可使用 **6GB 显存**。支持 Windows、Linux、NVIDIA GPU（SM70–SM120）和 Intel Arc GPU。详见 [GitHub 仓库](https://github.com/KohakuBlueleaf/KohakuMossTrainer)。
+
+- **[2026-10-16]** 🚀 [SGLang](https://docs.sglang.io/cookbook/diffusion/OpenMOSS/MOSS-Image)、[vLLM-Omni](https://recipes.vllm.ai/OpenMOSS-Team/MOSS-Image-Base) 和 [ComfyUI](https://huggingface.co/Comfy-Org/MOSS-Image) 均已提供 MOSS-Image 的发布首日（Day-0）支持。
+
 - **[2026-10-16]** 🎉 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 正式发布！代码和模型权重已开放。
 
   **核心特点：**
@@ -46,6 +60,20 @@
   - 🛠️ **易于微调：** 将基础模型适配到自定义任务和领域。
   - ⚡ **紧凑高效：** 基于 5B 主干网络，实现高效图像生成。
   - 🖥️ **异构 GPU 训练：** 采用替代 GPU 平台训练。
+
+<a id="community-projects"></a>
+
+## 社区项目
+
+- [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio) 现已支持 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的全参数微调与 LoRA 训练！详见[训练文档](https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/zh/Model_Details/MOSS-Image.md)和[示例脚本](https://github.com/modelscope/DiffSynth-Studio/tree/main/examples/moss_image/model_training)。
+
+- **MATLOWAI** 的 [MOSS-Image-SFT-DeBand](https://huggingface.co/MATLOWAI/MOSS-Image-SFT-DeBand) 提供用于减少 **MOSS-Image-SFT** 垂直色带的社区 LoRA，以及 ComfyUI 预设工作流。示例、参数及色带抑制与图像细节变化之间的取舍，详见模型卡。
+
+- **lodestones** 的 [MOSS-Image-SFT-8-steps-dmd](https://huggingface.co/lodestones/MOSS-Image-SFT-8-steps-dmd) 是基于 **MOSS-Image-SFT** 的社区 8 步 DMD 蒸馏项目，提供可用于 ComfyUI 的 LoRA 适配器。最新权重及使用建议详见模型卡。
+
+- **KBlueLeaf** 的 [MOSS-Image-FP16-fixed](https://huggingface.co/KBlueLeaf/MOSS-Image-FP16-fixed) 提供适用于 FP16 推理的 **MOSS-Image-Base** 和 **MOSS-Image-SFT** Transformer 权重，通过残差流缩放增加数值溢出余量。提供 Diffusers 和 ComfyUI 格式，加载方式及适配器兼容性详见模型卡。
+
+- **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
 <a id="user-guide"></a>
 
@@ -64,12 +92,11 @@
 
 ## ComfyUI
 
-本仓库实现了 MOSS-Image 的 ComfyUI 原生插件。
+MOSS-Image 已获 [ComfyUI 官方原生支持](https://github.com/Comfy-Org/ComfyUI/pull/17095)。更新至包含该支持的 ComfyUI master/nightly 并安装依赖后，可使用内置加载节点和 [ComfyUI 格式权重](https://huggingface.co/Comfy-Org/MOSS-Image)，无需额外安装 MOSS-Image 插件。
 
-在 **ComfyUI Manager** 中搜索 **MOSS-Image** 即可安装插件。
-我们正在积极推进合入 ComfyUI 官方仓库。
+本仓库插件仍可用于直接加载本地 Hugging Face / Diffusers 模型目录，以及运行已有插件工作流。
 
-[安装与使用](comfyui/README_ZH.md) · [示例工作流](comfyui/moss-image/example_workflows/moss-image.json)
+[安装与使用](comfyui/README_ZH.md) · [HF 加载插件工作流](comfyui/moss-image/example_workflows/moss-image.json)
 
 <a id="prompt-enhancer"></a>
 
@@ -88,6 +115,7 @@
 ## 目录
 
 - [动态](#news)
+- [社区项目](#community-projects)
 - [用户指南](#user-guide)
 - [ComfyUI](#comfyui)
 - [提示词增强 Skill](#prompt-enhancer)
@@ -139,6 +167,10 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+### Apple Silicon / MPS
+
+[Apple Silicon Mac 安装与限制](docs/macos_zh.md) · M1 Max / 32GB
 
 <a id="python"></a>
 
@@ -270,14 +302,17 @@ MOSS-Image 使用布局控制生成的结果。
 
 ## 📝 引用
 
-如果你在研究中使用 MOSS-Image，请引用本仓库：
+如果你在研究中使用 MOSS-Image，请引用我们的技术报告：
 
 ```bibtex
-@misc{mossimage2026,
-  title = {MOSS-Image},
-  author = {{OpenMOSS Team}},
-  year = {2026},
-  howpublished = {\url{https://github.com/OpenMOSS/MOSS-Image}}
+@misc{ai2026mossimagetechnicalreport,
+      title={MOSS-Image Technical Report},
+      author={MOSI. AI},
+      year={2026},
+      eprint={2610.23374},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2610.23374},
 }
 ```
 

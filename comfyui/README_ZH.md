@@ -5,7 +5,19 @@
 moss-image 支持直接读取本地 Hugging Face / Diffusers 模型目录，提供标准
 MODEL、CLIP、VAE 输出，配合 ComfyUI 原生采样、SLG 及显存管理使用。
 
-## 安装
+## 官方原生支持（推荐）
+
+[MOSS-Image 支持](https://github.com/Comfy-Org/ComfyUI/pull/17095) 已于 2026 年 10 月 16 日合入 ComfyUI。使用包含提交 `e087d8f6` 的 ComfyUI master/nightly 或后续版本，并安装最新 `requirements.txt` 中的依赖，此方式无需本仓库插件。截至 2026 年 10 月 19 日，`v0.41.3` 发布版尚未包含该支持。
+
+使用 [ComfyUI 格式模型和工作流](https://huggingface.co/Comfy-Org/MOSS-Image)：DiT 放入 `models/diffusion_models/`，文本编码器放入 `models/text_encoders/`，VAE 放入 `models/vae/`。使用 **Load Diffusion Model**、类型为 **moss_image** 的 **CLIP Loader** 和 **Load VAE**。内置模型默认 shift 为 5，并提供 **MOSS-Image Layout Prompt** 布局提示词节点。
+
+原插件工作流使用不同的加载节点。迁移时请导入原生工作流，不能只替换旧工作流的模型加载节点；原生模型的 timestep multiplier 不同，尤其不要原样沿用插件工作流中的 **ModelSamplingSD3** 节点。需要调整原生模型的 shift 时，使用 **ModelSamplingAuraFlow**（multiplier 为 1）。
+
+## HF 目录加载插件（可选）
+
+下文介绍本仓库插件及其工作流。需要直接加载本地 Hugging Face / Diffusers 模型目录，或继续使用已有插件工作流时，可以保留插件。
+
+### 安装
 
 将 `comfyui/moss-image/` 复制到 `ComfyUI/custom_nodes/moss-image/`，重启 ComfyUI。
 插件使用 ComfyUI 提供的依赖，可独立安装。
