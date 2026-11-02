@@ -74,7 +74,7 @@
 
 - [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) by **Rkkss** adds Spectrum-style hidden-state forecasting to accelerate MOSS-Image sampling in ComfyUI, with manual and experimental adaptive nodes. See the repository for recommended sampling settings and examples.
 
-- [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) by **mossimage-cpp** is a native C++/CUDA inference engine for **MOSS-Image-Base** and **MOSS-Image-SFT** on current NVIDIA GPUs (RTX 30 series and newer), with no PyTorch or Python at run time. It plans memory against the GPU it finds and streams the model when it does not fit, runs INT8 DiTs for everyday use, and offers a CLI, a C API and a JSON-lines server. Other community file formats and older GPUs (Turing, Volta) are supported as secondary targets. See the repository for speed and memory measurements.
+- [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) by **mossimage-cpp** is a native C++/CUDA inference engine for **MOSS-Image-Base** and **MOSS-Image-SFT**, with no PyTorch or Python at run time. It plans memory against the GPU it finds and streams the model when it does not fit. See the repository for speed, memory measurements and support GPUs.
 
 <a id="user-guide"></a>
 
