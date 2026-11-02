@@ -75,7 +75,7 @@
 
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
-- **mossimage-cpp** 的 [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) 是面向 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的原生 C++/CUDA 推理引擎，运行时无需 PyTorch 或 Python。它根据当前 GPU 规划显存，显存不足时流式加载模型，可在 Volta（Tesla V100）及更新的 NVIDIA GPU 上加载 ComfyUI INT8、INT4 ConvRot、NVFP4 和 GGUF 文件，并提供命令行、C API 和 JSON-lines 服务端。速度与显存测试数据详见仓库。
+- **mossimage-cpp** 的 [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) 是面向当前 NVIDIA GPU（RTX 30 系列及更新型号）上 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的原生 C++/CUDA 推理引擎，运行时无需 PyTorch 或 Python。它根据当前 GPU 规划显存，显存不足时流式加载模型，日常使用推荐 INT8 DiT，并提供命令行、C API 和 JSON-lines 服务端。其他社区文件格式和较旧的 GPU（Turing、Volta）作为次要目标提供支持。速度与显存测试数据详见仓库。
 
 <a id="user-guide"></a>
 
