@@ -75,6 +75,8 @@
 
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
+- **Campfire7** 的 [Graphis](https://github.com/Campfire7/graphis) 是一款免费开源的 macOS 应用，通过 mflux 和 MLX 在 Apple silicon 上本地运行 **MOSS-Image-SFT**。运行环境已内置，无需配置 Python。系统要求、安装方法以及 8 步 DMD LoRA、参考图、LoRA 模块等功能详见仓库。
+
 <a id="user-guide"></a>
 
 ## 用户指南

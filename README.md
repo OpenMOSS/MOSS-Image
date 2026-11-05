@@ -74,6 +74,8 @@
 
 - [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) by **Rkkss** adds Spectrum-style hidden-state forecasting to accelerate MOSS-Image sampling in ComfyUI, with manual and experimental adaptive nodes. See the repository for recommended sampling settings and examples.
 
+- [Graphis](https://github.com/Campfire7/graphis) by **Campfire7** is a free, open-source macOS app that runs **MOSS-Image-SFT** locally on Apple silicon through mflux and MLX. The engine is bundled, so no Python setup is needed. See the repository for requirements, installation and features such as the 8-step DMD LoRA, reference images and LoRA modules.
+
 <a id="user-guide"></a>
 
 ## User guide
