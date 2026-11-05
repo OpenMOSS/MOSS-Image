@@ -1,0 +1,2 @@
+{"id":"poster-314","prompt":"A travel poster titled \"山海之间\", with blue mountains above a calm sea, crisp Chinese lettering, and generous white margins.","negative_prompt":"模糊，低清晰度","seed":314,"width":1024,"height":1024,"num_inference_steps":50,"guidance_scale":3.0}
+{"id":"poster-315","prompt":"A travel poster titled \"山海之间\", with blue mountains above a calm sea, crisp Chinese lettering, and generous white margins.","negative_prompt":"模糊，低清晰度","seed":315,"width":1024,"height":1024,"num_inference_steps":50,"guidance_scale":4.0}
