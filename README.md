@@ -76,6 +76,8 @@
 
 - [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) by **mossimage-cpp** is a native C++/CUDA inference engine for **MOSS-Image-Base** and **MOSS-Image-SFT**, with no PyTorch or Python at run time. It plans memory against the GPU it finds and streams the model when it does not fit. See the repository for speed, memory measurements and supported GPUs.
 
+- [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) by **moss-image-community** is a browser-based visual editor for layout drafts: draw text, object, and character boxes on a canvas, edit their text in place, and copy a prompt compiled the same way as the prompt-enhancer skill's `compile_prompt.py` (the official test cases are ported and pass). It runs entirely in the browser and makes no generation calls; try the [live demo](https://moss-image-community.github.io/moss-image-layout-editor/).
+
 <a id="user-guide"></a>
 
 ## User guide
@@ -236,9 +238,26 @@ Select Memory mode in Gradio's Advanced settings:
 | GPU resident | Keep the entire model on GPU |
 | Component | Move model components between CPU and GPU as needed |
 | Sequential · fallback | Lower memory use with slower inference |
+| Low memory | Keep DiT weights in CPU RAM; load text encoder/VAE weights from disk as needed |
 
 If GPU memory is insufficient, select Sequential or reduce image size.
-Compile DiT is disabled by default and unavailable in Sequential mode.
+For lower GPU and system memory use, select the `minimal` profile (Low memory mode):
+
+```bash
+python gradio_app.py --profile minimal --model OpenMOSS-Team/MOSS-Image-Base
+```
+
+The `auto` profile selects `minimal` below 12 GiB of GPU budget. Keep the model files
+on an SSD: DiT stays in CPU RAM, while the text encoder and VAE load weights as needed.
+
+Measured peak usage for one 1024×1024 image with 50 steps:
+
+| Resource | Peak usage |
+| --- | --- |
+| PyTorch GPU memory allocated / reserved | 3.65 / 3.85 GiB |
+| Task system RAM, including file cache | 14.00 GiB |
+
+Compile DiT is disabled by default and unavailable in Sequential and Low memory modes.
 
 <a id="layout-generation"></a>
 

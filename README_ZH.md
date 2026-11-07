@@ -77,6 +77,8 @@
 
 - **mossimage-cpp** 的 [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) 是面向 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的原生 C++/CUDA 推理引擎，运行时无需 PyTorch 或 Python。它根据当前 GPU 规划显存，显存不足时流式加载模型。速度、显存测试数据及支持的 GPU 详见仓库。
 
+- **moss-image-community** 的 [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) 是在浏览器里编辑布局草稿的可视化工具：在画布上画文字、物体和角色框，直接在框内改字，再复制一份与提示词增强 Skill 中 `compile_prompt.py` 编译方式一致的提示词（已移植官方测试用例并全部通过）。纯前端运行，不调用生成接口，可直接打开[在线演示](https://moss-image-community.github.io/moss-image-layout-editor/?lang=zh)。
+
 <a id="user-guide"></a>
 
 ## 用户指南
@@ -231,9 +233,26 @@ python gradio_app.py --model OpenMOSS-Team/MOSS-Image-Base
 | GPU resident | 全模型驻留 GPU |
 | Component | 按需在 CPU 与 GPU 之间移动模型组件 |
 | Sequential · fallback | 更低显存占用，推理速度较慢 |
+| Low memory | DiT 权重保留在 CPU 内存，文本编码器和 VAE 权重从磁盘按需加载 |
 
 显存不足时，选择 Sequential 或减小图像尺寸。
-Compile DiT 默认关闭，Sequential 模式下不可用。
+需要降低显存和系统内存占用时，可选择 `minimal` 档位（Low memory 模式）：
+
+```bash
+python gradio_app.py --profile minimal --model OpenMOSS-Team/MOSS-Image-Base
+```
+
+`auto` 档位在 GPU 预算低于 12 GiB 时选择 `minimal`。建议将模型文件放在 SSD 上：
+DiT 权重保留在 CPU 内存，文本编码器和 VAE 权重按需加载。
+
+实测峰值（单张 1024×1024 图片，50 步）：
+
+| 资源 | 峰值占用 |
+| --- | --- |
+| PyTorch 显存分配 / 保留 | 3.65 / 3.85 GiB |
+| 任务系统内存，含文件缓存 | 14.00 GiB |
+
+Compile DiT 默认关闭，Sequential 和 Low memory 模式下不可用。
 
 <a id="layout-generation"></a>
 
