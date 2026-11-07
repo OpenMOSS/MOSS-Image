@@ -54,7 +54,7 @@ negative prompt:
 
 ### Layout Prompts (Experimental)
 
-MOSS-Image-Base explores layout control for text-to-image generation and currently supports input in the following JSON format:
+MOSS-Image-Base explores layout control for text-to-image generation and currently supports the following model-facing JSON format:
 
 ```json
 {
@@ -91,6 +91,31 @@ The fields are defined as follows:
 > Some recent work uses relative coordinates for layout control. We use absolute pixel coordinates, which we believe are better suited to layout control across different resolutions and aspect ratios.
 
 The model supports combining natural language and structured input.
+
+#### Authoring editable layout drafts
+
+The [Pixel Layout draft reference](skills/moss-image-prompt-enhancer/references/layout.md)
+and [compiler](skills/moss-image-prompt-enhancer/scripts/compile_prompt.py) provide
+an editable input format that differs from the model-facing JSON above:
+
+| Format | Coordinate space | Box order | Canvas dimensions |
+| --- | --- | --- | --- |
+| Editable draft | `abs`, from the top-left | `xyxy` | `width` and `height` required |
+| Model prompt | `abs_centralized`, from the center | `yxyx` | Omitted from the compiled JSON |
+
+From the repository root, compile a draft with:
+
+```bash
+python3 skills/moss-image-prompt-enhancer/scripts/compile_prompt.py draft.json --output prompt.txt
+```
+
+For example, on a 1536×1024 canvas, the draft box `[176,224,800,864]`
+becomes `[-288,-592,352,32]` in the model prompt. The compiler encloses
+fractional draft edges at pixel boundaries before subtracting the canvas center.
+
+Use the draft's width and height in your image-generation settings. Changing
+these dimensions alone does not rescale the draft boxes; update their coordinates
+when resizing a composition. Keep the editable draft for later revisions.
 
 ## Prompt Enhancer and Layout Enhancer
 
