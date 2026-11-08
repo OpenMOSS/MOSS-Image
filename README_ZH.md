@@ -75,6 +75,8 @@
 
 - **Rkkss** 的 [ComfyUI-Spectrum-MOSS](https://github.com/Rkkss/ComfyUI-Spectrum-MOSS) 通过 Spectrum 风格的隐藏状态预测加速 ComfyUI 中的 MOSS-Image 采样，提供手动配置节点和实验性自适应节点。推荐采样设置及示例详见仓库。
 
+- **mossimage-cpp** 的 [mossimage.cpp](https://github.com/mossimage-cpp/mossimage.cpp) 是面向 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的原生 C++/CUDA 推理引擎，运行时无需 PyTorch 或 Python。它根据当前 GPU 规划显存，显存不足时流式加载模型。速度、显存测试数据及支持的 GPU 详见仓库。
+
 - **moss-image-community** 的 [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) 是在浏览器里编辑布局草稿的可视化工具：在画布上画文字、物体和角色框，直接在框内改字，再复制一份与提示词增强 Skill 中 `compile_prompt.py` 编译方式一致的提示词（已移植官方测试用例并全部通过）。纯前端运行，不调用生成接口，可直接打开[在线演示](https://moss-image-community.github.io/moss-image-layout-editor/?lang=zh)。
 
 <a id="user-guide"></a>
