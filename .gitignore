@@ -17,7 +17,10 @@ outputs/
 *credential*
 github_ssh_public_key.txt
 /.github/workflows/tests.yml
-/examples/
+/examples/*
+!/examples/staged_jobs.jsonl
+/encodings/
+.moss-batch.lock
 /export_diffusers.py
 .ruff_cache/
 /ckpt/
