@@ -79,6 +79,8 @@
 
 - **moss-image-community** 的 [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) 是在浏览器里编辑布局草稿的可视化工具：在画布上画文字、物体和角色框，直接在框内改字，再复制一份与提示词增强 Skill 中 `compile_prompt.py` 编译方式一致的提示词（已移植官方测试用例并全部通过）。纯前端运行，不调用生成接口，可直接打开[在线演示](https://moss-image-community.github.io/moss-image-layout-editor/?lang=zh)。
 
+- **mossimage.dev** 的 [MOSS-Image ComfyUI 指南](https://mossimage.dev/blog/moss-image-comfyui-guide) 把四个官方 ComfyUI 工作流模板（`image_moss_image_t2i`、`image_moss_image_base_t2i` 及两个 `_bboxes` 变体）与各自需要加载的模型文件和采样参数对应起来，并整理了让图内文字保持可读的框坐标规则。内容为独立第三方编写，与 OpenMOSS 无关；同一站点也基于这些权重提供了在线工作室。
+
 <a id="user-guide"></a>
 
 ## 用户指南

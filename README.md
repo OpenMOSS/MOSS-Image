@@ -78,6 +78,8 @@
 
 - [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) by **moss-image-community** is a browser-based visual editor for layout drafts: draw text, object, and character boxes on a canvas, edit their text in place, and copy a prompt compiled the same way as the prompt-enhancer skill's `compile_prompt.py` (the official test cases are ported and pass). It runs entirely in the browser and makes no generation calls; try the [live demo](https://moss-image-community.github.io/moss-image-layout-editor/).
 
+- [MOSS-Image ComfyUI guide](https://mossimage.dev/blog/moss-image-comfyui-guide) by **mossimage.dev** maps the four official ComfyUI workflow templates (`image_moss_image_t2i`, `image_moss_image_base_t2i` and the two `_bboxes` variants) to the model files and sampler settings each one loads, and documents the box-coordinate rules that keep in-image text legible. It is an independent, unaffiliated write-up; the same site also runs a hosted studio on these weights.
+
 <a id="user-guide"></a>
 
 ## User guide
