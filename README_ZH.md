@@ -79,6 +79,8 @@
 
 - **moss-image-community** 的 [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) 是在浏览器里编辑布局草稿的可视化工具：在画布上画文字、物体和角色框，直接在框内改字，再复制一份与提示词增强 Skill 中 `compile_prompt.py` 编译方式一致的提示词（已移植官方测试用例并全部通过）。纯前端运行，不调用生成接口，可直接打开[在线演示](https://moss-image-community.github.io/moss-image-layout-editor/?lang=zh)。
 
+- **rabbitANDtank** 的 [MOSS Prompt Studio](https://github.com/rabbitANDtank/comfyui-moss-prompt-studio) 是面向 MOSS-Image 的中文端到端 ComfyUI 提示词工作室：可在画布上可视化编辑布局草稿，经 LLM 翻译后按官方 `compile_prompt.py` 契约编译提示词，并支持图像反推、定向修改和多格模板。详情与当前版本见仓库。
+
 <a id="user-guide"></a>
 
 ## 用户指南
