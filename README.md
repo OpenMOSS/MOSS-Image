@@ -78,6 +78,8 @@
 
 - [moss-image-layout-editor](https://github.com/moss-image-community/moss-image-layout-editor) by **moss-image-community** is a browser-based visual editor for layout drafts: draw text, object, and character boxes on a canvas, edit their text in place, and copy a prompt compiled the same way as the prompt-enhancer skill's `compile_prompt.py` (the official test cases are ported and pass). It runs entirely in the browser and makes no generation calls; try the [live demo](https://moss-image-community.github.io/moss-image-layout-editor/).
 
+- [The Layout Studio for MOSS-Image](https://github.com/Rexoplanets/layout-studio-moss-image) by **Rexoplanets** is an intuitive, dynamic, design-first visual interface for "drawing" bounding-box (bbox) prompts, which you then export in a perfect JSON format that works with any AI-image generator running MOSS-Image. Designed as a lightweight, zero-dependency tool, it operates 100% locally, privately, and offline — on any modern web browser, on any OS — without requiring ComfyUI, Python, build steps, servers, or external network requests. [→Live web demo](https://rexoplanets.github.io/layout-studio-moss-image/Layout_Studio_for_MOSS_Image.html)
+
 <a id="user-guide"></a>
 
 ## User guide
