@@ -77,23 +77,12 @@
 git clone https://github.com/OpenMOSS/MOSS-Image.git
 cd MOSS-Image
 bash tpu/setup-tpu.sh
+pip install --no-deps deltanet-tpu
 
 # 1. 硬件连通性检测
 python3 tpu/run_tpu.py --mode probe
 
-# 2. 基础 Eager 生图（< 40 GiB 显存自动启用 offload；兼容 Python 3.11–3.14，无需 JAX）
-python3 tpu/run_tpu.py \
-  --mode generate --eager-mode defer_and_fuse \
-  --prompt-cache-dir outputs/prompt_cache \
-  --height 848 --width 1200 --steps 55 --seed 136879772936584 \
-  --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
-```
-
-<details>
-<summary><strong>⚡ 可选：启用实验性 Pallas GDN 加速（需 Python ≥ 3.12 + 兼容当前 libtpu 的 JAX；Colab TPU 已预装）</strong></summary>
-
-```bash
-pip install --no-deps deltanet-tpu
+# 2. 快速生图（默认启用算子融合与 Pallas 加速；< 40 GiB 显存自动启用 offload）
 python3 tpu/run_tpu.py \
   --mode generate --eager-mode defer_and_fuse --gdn-pallas \
   --prompt-cache-dir outputs/prompt_cache \
@@ -101,7 +90,8 @@ python3 tpu/run_tpu.py \
   --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
 ```
 
-</details>
+> [!NOTE]
+> `--gdn-pallas` 需 **Python ≥ 3.12** 与兼容当前 `libtpu` 的 **JAX** 依赖（Google Colab TPU 与新版镜像通常已预装）。若运行提示缺少 JAX 或 Python `< 3.12`，去掉 `--gdn-pallas` 参数即可正常生图（仅文本编码阶段会变慢）。
 
 也可直接在 Colab 打开 [`tpu/moss_image_torchtpu_colab.ipynb`](moss_image_torchtpu_colab.ipynb)。完整参数与压测命令见 [tpu/tpu.md](tpu.md)。
 

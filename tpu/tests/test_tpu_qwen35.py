@@ -806,6 +806,38 @@ class TestTpuQwen35Gdn(unittest.TestCase):
             self.assertFalse(report["gdn_pallas_active"])
             self.assertIsNone(report["gdn_pallas_stats"])
 
+    def test_pallas_missing_prereq_error_explains_python312_jax_and_fallback(self):
+        with mock.patch.dict(tpu_qwen35._GDN_OP_CACHE, {}, clear=True):
+            real_import = tpu_qwen35.importlib.import_module
+
+            def _missing_jax(name, *args, **kwargs):
+                if name == "jax":
+                    raise ImportError("No module named 'jax'")
+                return real_import(name, *args, **kwargs)
+
+            with mock.patch.object(tpu_qwen35.importlib, "import_module", side_effect=_missing_jax):
+                with self.assertRaises(RuntimeError) as ctx_jax:
+                    tpu_qwen35.register_chunk_gdn_pallas_op()
+            msg_jax = str(ctx_jax.exception)
+            self.assertIn("JAX", msg_jax)
+            self.assertIn("Python >= 3.12", msg_jax)
+            self.assertIn("omit `--gdn-pallas`", msg_jax)
+
+            def _missing_deltanet(name, *args, **kwargs):
+                if name == "deltanet_tpu":
+                    raise ImportError("No module named 'deltanet_tpu'")
+                return real_import(name, *args, **kwargs)
+
+            with mock.patch.object(
+                tpu_qwen35.importlib, "import_module", side_effect=_missing_deltanet
+            ):
+                with self.assertRaises(RuntimeError) as ctx_dn:
+                    tpu_qwen35.register_chunk_gdn_pallas_op(jax_module=SimpleNamespace(Array=object))
+            msg_dn = str(ctx_dn.exception)
+            self.assertIn("deltanet_tpu", msg_dn)
+            self.assertIn("Python >= 3.12", msg_dn)
+            self.assertIn("omit `--gdn-pallas`", msg_dn)
+
 
 if __name__ == "__main__":
     unittest.main()

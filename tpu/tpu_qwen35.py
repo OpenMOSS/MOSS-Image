@@ -11,6 +11,7 @@ import importlib.util
 import inspect
 import json
 import os
+import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -27,6 +28,12 @@ PROMPT_CACHE_VERSION = 1
 _LOCK = RLock()
 _JAX_BACKEND_LOCK = RLock()
 _GDN_OP_CACHE: dict[tuple[bool, str], Any] = {}
+_PALLAS_PREREQ_SUFFIX = (
+    "`--gdn-pallas` requires Python >= 3.12, a JAX build compatible with TorchTPU's pinned libtpu "
+    "(preinstalled on Google Colab TPU), and `pip install --no-deps deltanet-tpu` "
+    "(do NOT install `deltanet-tpu[tpu]`, which overwrites TorchTPU's pinned libtpu). "
+    "To run without Pallas acceleration (at slower text-encoding speed), omit `--gdn-pallas`."
+)
 
 
 def is_deltanet_tpu_available() -> bool:
@@ -103,9 +110,8 @@ def register_chunk_gdn_pallas_op(
             jax_module = importlib.import_module("jax")
         except ImportError as exc:
             raise RuntimeError(
-                "JAX is required for Qwen3.5 GDN Pallas acceleration. "
-                "On TorchTPU Colab, install deltanet-tpu without upgrading JAX/libtpu: "
-                "`pip install --no-deps deltanet-tpu`."
+                f"JAX is required for Qwen3.5 GDN Pallas acceleration (current Python {sys.version.split()[0]}). "
+                + _PALLAS_PREREQ_SUFFIX
             ) from exc
 
     if chunk_gdn_fn is None:
@@ -114,9 +120,8 @@ def register_chunk_gdn_pallas_op(
             chunk_gdn_fn = deltanet_mod.chunk_gdn
         except ImportError as exc:
             raise RuntimeError(
-                "`deltanet_tpu` is required for `--gdn-pallas`. "
-                "Install with `pip install --no-deps deltanet-tpu` "
-                "(do NOT install `deltanet-tpu[tpu]`, which overwrites TorchTPU's pinned libtpu)."
+                f"`deltanet_tpu` is unavailable for `--gdn-pallas` (current Python {sys.version.split()[0]}). "
+                + _PALLAS_PREREQ_SUFFIX
             ) from exc
 
     if jax_op_fn is None:
@@ -125,7 +130,8 @@ def register_chunk_gdn_pallas_op(
         jax_op_fn = getattr(pallas_mod, "jax_op", None)
         if not callable(jax_op_fn):
             raise RuntimeError(
-                "torch.tpu.pallas.jax_op is not available in this PyTorch build."
+                "torch.tpu.pallas.jax_op is not available in this PyTorch build. "
+                "To run without Pallas acceleration (at slower text-encoding speed), omit `--gdn-pallas`."
             )
 
     jax_array_type = jax_module.Array
