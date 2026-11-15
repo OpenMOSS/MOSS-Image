@@ -77,18 +77,31 @@ When prompts change under `--offload model`, `Qwen3.5-9B` (`15.63 GiB`) swaps wi
 git clone https://github.com/OpenMOSS/MOSS-Image.git
 cd MOSS-Image
 bash tpu/setup-tpu.sh
-pip install --no-deps deltanet-tpu
 
 # 1. Verify TPU device
 python3 tpu/run_tpu.py --mode probe
 
-# 2. Fast generation (auto-enables offload below 40 GiB HBM)
+# 2. Base eager generation (auto-enables offload below 40 GiB HBM; Python 3.11–3.14, no JAX required)
+python3 tpu/run_tpu.py \
+  --mode generate --eager-mode defer_and_fuse \
+  --prompt-cache-dir outputs/prompt_cache \
+  --height 848 --width 1200 --steps 55 --seed 136879772936584 \
+  --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
+```
+
+<details>
+<summary><strong>⚡ Optional: Experimental Pallas GDN Acceleration (requires Python ≥ 3.12 + JAX matching libtpu; preinstalled on Colab TPU)</strong></summary>
+
+```bash
+pip install --no-deps deltanet-tpu
 python3 tpu/run_tpu.py \
   --mode generate --eager-mode defer_and_fuse --gdn-pallas \
   --prompt-cache-dir outputs/prompt_cache \
   --height 848 --width 1200 --steps 55 --seed 136879772936584 \
   --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
 ```
+
+</details>
 
 Or run [`tpu/moss_image_torchtpu_colab.ipynb`](moss_image_torchtpu_colab.ipynb) directly in Google Colab. Full flags and logs are in [tpu/tpu.md](tpu.md).
 

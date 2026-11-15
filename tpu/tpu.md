@@ -178,7 +178,7 @@ python3 tpu/run_tpu.py \
 Qwen3.5-9B uses 24 `GatedDeltaNet` linear-attention layers (`Hk=16, Hv=32, D=128`, `use_cache=False` during encoding). An opt-in `torch.tpu.pallas.jax_op` bridge (`tpu_qwen35.py`) can route `torch_chunk_gated_delta_rule` through `deltanet_tpu.chunk_gdn` with `128`-aligned static causal buckets (`128, 256, 384, 512, 768, 1024`).
 
 > [!WARNING]
-> On Colab TorchTPU runtimes, install `deltanet-tpu` with `--no-deps` so it does not overwrite TorchTPU's pinned `libtpu`:
+> `deltanet-tpu` requires Python `>= 3.12` and a compatible `jax` runtime (preinstalled on Colab TPU). On TorchTPU runtimes, install it with `--no-deps` so it does not overwrite TorchTPU's pinned `libtpu`:
 > `pip install --no-deps deltanet-tpu`
 
 Run standalone single-layer & recurrence A/B verification (no full 18 GB checkpoint download required) or end-to-end fast split-stage generation (Stage 1 `Qwen3.5-9B` automatically runs in `default` / `DEFER_NEVER` + Pallas when `--text-eager-mode auto` is active alongside `--gdn-pallas`, while Stage 2/3 DiT+VAE runs in `defer_and_fuse`):

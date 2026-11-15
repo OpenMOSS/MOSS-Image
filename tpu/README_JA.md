@@ -75,18 +75,31 @@ Google Colab **`TPU v6e-1`**（`31.24 GiB` HBM、`848×1200`、55 ステップ�
 git clone https://github.com/OpenMOSS/MOSS-Image.git
 cd MOSS-Image
 bash tpu/setup-tpu.sh
-pip install --no-deps deltanet-tpu
 
 # 1. TPU 動作確認
 python3 tpu/run_tpu.py --mode probe
 
-# 2. 高速画像生成（40 GiB 未満では自動的に offload が有効化）
+# 2. 基本 Eager 画像生成（40 GiB 未満で自動 offload、Python 3.11–3.14・JAX 不要）
+python3 tpu/run_tpu.py \
+  --mode generate --eager-mode defer_and_fuse \
+  --prompt-cache-dir outputs/prompt_cache \
+  --height 848 --width 1200 --steps 55 --seed 136879772936584 \
+  --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
+```
+
+<details>
+<summary><strong>⚡ オプション：実験的 Pallas GDN 高速化（Python ≥ 3.12 と互換性のある JAX が必要／Colab TPU ではプリインストール済み）</strong></summary>
+
+```bash
+pip install --no-deps deltanet-tpu
 python3 tpu/run_tpu.py \
   --mode generate --eager-mode defer_and_fuse --gdn-pallas \
   --prompt-cache-dir outputs/prompt_cache \
   --height 848 --width 1200 --steps 55 --seed 136879772936584 \
   --prompt "A ceramic teapot on linen" --output outputs/moss_tpu.png
 ```
+
+</details>
 
 Google Colab では [`tpu/moss_image_torchtpu_colab.ipynb`](moss_image_torchtpu_colab.ipynb) から直接実行できます。詳細手順は [tpu/tpu.md](tpu.md) をご覧ください。
 

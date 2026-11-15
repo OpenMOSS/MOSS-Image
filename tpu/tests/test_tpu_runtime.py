@@ -1074,6 +1074,81 @@ class IntegrationTests(unittest.TestCase):
             tpu_runtime._restore_module_from_cpu_snapshot(mod, snap, fake_tpu_dev)
         self.assertEqual(calls, [("tpu", True)])
 
+    def test_gradio_ui_disables_compile_dit_on_tpu(self):
+        controls = {}
+        change_handlers = []
+
+        class _FakeWidget:
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+                label = kwargs.get("label")
+                if label is not None:
+                    controls[label] = kwargs
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_exc):
+                return False
+
+            def _record_event(self, fn=None, *_args, **_kwargs):
+                if callable(fn):
+                    change_handlers.append(fn)
+
+            change = _record_event
+            click = _record_event
+            input = _record_event
+            release = _record_event
+            select = _record_event
+            tick = _record_event
+
+        class _FakeBlocks(_FakeWidget):
+            def serve_static_file(self, path):
+                return {"url": f"/file={Path(path).name}"}
+
+            def queue(self, **_kwargs):
+                return self
+
+        fake_gradio = SimpleNamespace(
+            Blocks=_FakeBlocks,
+            Row=_FakeWidget,
+            Column=_FakeWidget,
+            Group=_FakeWidget,
+            Accordion=_FakeWidget,
+            Dropdown=_FakeWidget,
+            Textbox=_FakeWidget,
+            State=_FakeWidget,
+            Slider=_FakeWidget,
+            Number=_FakeWidget,
+            Radio=_FakeWidget,
+            Checkbox=_FakeWidget,
+            Button=_FakeWidget,
+            Gallery=_FakeWidget,
+            Markdown=_FakeWidget,
+            HTML=_FakeWidget,
+            Timer=_FakeWidget,
+            Progress=lambda: None,
+            SelectData=object,
+            Error=RuntimeError,
+            update=lambda **kwargs: kwargs,
+            skip=lambda: None,
+        )
+
+        with (
+            mock.patch.dict(sys.modules, {"gradio": fake_gradio}),
+            mock.patch.object(gradio_app.mps_runtime, "is_available", return_value=False),
+            mock.patch.object(tpu_runtime, "is_available", return_value=True),
+        ):
+            gradio_app.build_app("missing-model-directory")
+
+        self.assertTrue(controls["Memory mode"]["interactive"])
+        self.assertFalse(controls["Compile DiT"]["interactive"])
+        self.assertFalse(controls["Compile DiT"]["value"])
+        update_fns = [fn for fn in change_handlers if getattr(fn, "__name__", "") == "update_compile"]
+        self.assertEqual(len(update_fns), 1)
+        self.assertEqual(update_fns[0]("none"), {"value": False, "interactive": False})
+
 
 if __name__ == "__main__":
     unittest.main()

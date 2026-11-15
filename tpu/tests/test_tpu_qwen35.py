@@ -724,6 +724,87 @@ class TestTpuQwen35Gdn(unittest.TestCase):
             report = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertEqual(report["eager_mode"], "defer_and_fuse")
             self.assertEqual(report["text_eager_mode"], "default")
+            self.assertTrue(report["text_encoder_loaded"])
+            self.assertTrue(report["gdn_pallas_requested"])
+            self.assertTrue(report["gdn_pallas"])
+            self.assertFalse(report["gdn_pallas_active"])
+
+    def test_generate_with_cached_prompts_reports_gdn_pallas_inactive(self):
+        cli = _load_script_module("tpu/run_tpu.py", "run_tpu_cached_report_test")
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "prompt_cache"
+            out_path = Path(tmp) / "out.png"
+            report_path = Path(tmp) / "report.json"
+            model_id = "OpenMOSS-Team/MOSS-Image-Base"
+            pos_embeds = torch.zeros((1, 4, 8), dtype=torch.bfloat16)
+            pos_mask = torch.ones((1, 4), dtype=torch.bool)
+            neg_embeds = torch.ones((1, 3, 8), dtype=torch.bfloat16)
+            neg_mask = torch.ones((1, 3), dtype=torch.bool)
+            tpu_qwen35.save_cached_prompt_embed(
+                cache_dir, model_id, "cached prompt", 512, pos_embeds, pos_mask
+            )
+            tpu_qwen35.save_cached_prompt_embed(
+                cache_dir, model_id, "", 512, neg_embeds, neg_mask
+            )
+
+            load_kwargs = []
+
+            class FakeLoadedPipe:
+                gdn_pallas_stats = None
+
+                def progress_bar(self, iterable):
+                    return iterable
+
+                def __call__(self, **_kwargs):
+                    from PIL import Image
+
+                    list(self.progress_bar([1]))
+                    return SimpleNamespace(images=[Image.new("RGB", (16, 16))])
+
+                def disable_gdn_pallas(self):
+                    pass
+
+            def _fake_load(*_args, **kwargs):
+                load_kwargs.append(kwargs)
+                return FakeLoadedPipe()
+
+            with (
+                mock.patch.object(tpu_runtime, "is_available", return_value=False),
+                mock.patch.object(tpu_runtime, "load_pipeline", side_effect=_fake_load),
+                mock.patch("builtins.print"),
+            ):
+                rc = cli.main(
+                    [
+                        "--mode",
+                        "generate",
+                        "--model",
+                        model_id,
+                        "--prompt",
+                        "cached prompt",
+                        "--negative-prompt",
+                        "",
+                        "--max-sequence-length",
+                        "512",
+                        "--prompt-cache-dir",
+                        str(cache_dir),
+                        "--gdn-pallas",
+                        "--allow-cpu",
+                        "--output",
+                        str(out_path),
+                        "--save-report",
+                        str(report_path),
+                    ]
+                )
+
+            self.assertEqual(rc, 0)
+            self.assertFalse(load_kwargs[0]["include_text_encoder"])
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertFalse(report["text_encoder_loaded"])
+            self.assertEqual(report["prompt_cache_hits"], {"positive": True, "negative": True})
+            self.assertTrue(report["gdn_pallas_requested"])
+            self.assertFalse(report["gdn_pallas"])
+            self.assertFalse(report["gdn_pallas_active"])
+            self.assertIsNone(report["gdn_pallas_stats"])
 
 
 if __name__ == "__main__":

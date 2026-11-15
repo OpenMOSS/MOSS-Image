@@ -608,7 +608,11 @@ def build_app(
                             )
                             compile_transformer = gr.Checkbox(
                                 value=False,
-                                interactive=not on_mps and offload_default not in ("sequential", "hybrid"),
+                                interactive=(
+                                    not on_mps
+                                    and not on_tpu
+                                    and offload_default not in ("sequential", "hybrid")
+                                ),
                                 label="Compile DiT",
                                 scale=0,
                                 min_width=0,
@@ -801,7 +805,7 @@ def build_app(
             )
 
         def update_compile(mode):
-            if on_mps or mode in ("sequential", "hybrid"):
+            if on_mps or on_tpu or mode in ("sequential", "hybrid"):
                 return gr.update(value=False, interactive=False)
             return gr.update(interactive=True)
 

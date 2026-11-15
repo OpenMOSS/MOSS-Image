@@ -240,7 +240,10 @@ def run_encode_only(args) -> dict:
         ),
         "encode_seconds": round(elapsed, 2),
         "peak_hbm_gib": peak_gib,
-        "gdn_pallas": use_gdn_pallas,
+        "text_encoder_loaded": need_encode_pos or need_encode_neg,
+        "gdn_pallas_requested": use_gdn_pallas,
+        "gdn_pallas": use_gdn_pallas and (need_encode_pos or need_encode_neg),
+        "gdn_pallas_active": gdn_pallas_stats is not None,
         "gdn_pallas_stats": gdn_pallas_stats,
         "prompt_cache_hits": cache_hits,
         "breakdown": {
@@ -546,6 +549,7 @@ def run_generate_or_benchmark(args) -> dict:
     prompt_cache_dir = getattr(args, "prompt_cache_dir", None)
     use_gdn_pallas = bool(getattr(args, "gdn_pallas", False))
     gdn_buckets = _resolve_gdn_buckets(args)
+    prompt_cache_hits = None
     if embeds_payload is None and prompt_cache_dir is not None:
         has_pos = (
             tpu_qwen35.load_cached_prompt_embed(
@@ -553,13 +557,19 @@ def run_generate_or_benchmark(args) -> dict:
             )
             is not None
         )
-        has_neg = args.guidance_scale == 1.0 or (
-            tpu_qwen35.load_cached_prompt_embed(
-                prompt_cache_dir, args.model, args.negative_prompt, args.max_sequence_length
+        has_neg_hit = (
+            False
+            if args.guidance_scale == 1.0
+            else (
+                tpu_qwen35.load_cached_prompt_embed(
+                    prompt_cache_dir, args.model, args.negative_prompt, args.max_sequence_length
+                )
+                is not None
             )
-            is not None
         )
+        has_neg = args.guidance_scale == 1.0 or has_neg_hit
         include_text_encoder = not (has_pos and has_neg)
+        prompt_cache_hits = {"positive": has_pos, "negative": has_neg_hit}
     else:
         include_text_encoder = embeds_payload is None
     output = Path(args.output)
@@ -618,7 +628,11 @@ def run_generate_or_benchmark(args) -> dict:
             "eager_mode": args.eager_mode,
             "text_eager_mode": text_eager_mode,
             "compile": args.compile,
-            "gdn_pallas": use_gdn_pallas,
+            "text_encoder_loaded": include_text_encoder,
+            "prompt_cache_hits": prompt_cache_hits,
+            "gdn_pallas_requested": use_gdn_pallas,
+            "gdn_pallas": use_gdn_pallas and include_text_encoder,
+            "gdn_pallas_active": gdn_stats is not None,
             "gdn_pallas_stats": gdn_stats,
             "prompt_cache_dir": prompt_cache_dir,
             "buckets": list(buckets),
@@ -644,6 +658,7 @@ def run_generate_or_benchmark(args) -> dict:
                 raise ValueError(f"Unknown benchmark mode: {item!r}")
 
         results = {}
+        gdn_stats_by_mode = {}
         for name, eager_mode, compile_flag in bench_configs:
             text_eager_mode = _resolve_text_eager_mode(
                 getattr(args, "text_eager_mode", "auto"),
@@ -681,6 +696,7 @@ def run_generate_or_benchmark(args) -> dict:
                     stats["run_index"] = idx + 1
                     mode_runs.append(stats)
             finally:
+                gdn_stats_by_mode[name] = pipe.gdn_pallas_stats
                 pipe.disable_gdn_pallas()
             results[name] = mode_runs
             del pipe
@@ -699,7 +715,12 @@ def run_generate_or_benchmark(args) -> dict:
             "offload": args.offload,
             "stage_switch_mode": stage_switch_mode,
             "text_eager_mode": getattr(args, "text_eager_mode", "auto"),
-            "gdn_pallas": use_gdn_pallas,
+            "text_encoder_loaded": include_text_encoder,
+            "prompt_cache_hits": prompt_cache_hits,
+            "gdn_pallas_requested": use_gdn_pallas,
+            "gdn_pallas": use_gdn_pallas and include_text_encoder,
+            "gdn_pallas_active": any(v is not None for v in gdn_stats_by_mode.values()),
+            "gdn_pallas_stats_by_mode": gdn_stats_by_mode if use_gdn_pallas else None,
             "prompt_cache_dir": prompt_cache_dir,
             "buckets": list(buckets),
             "results": results,
