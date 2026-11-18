@@ -20,6 +20,9 @@ python3 tpu/run_tpu.py --mode probe
 python3 tpu/run_tpu.py --mode generate --prompt "A ceramic teapot on linen"
 ```
 
+TPU downloads use a RAM-backed cache automatically when tmpfs and host memory have enough space.
+Use `MOSS_IMAGE_TPU_DISK_CACHE=1` to use the regular Hugging Face cache on disk.
+
 > Runs strict eager (`default` / `DEFER_NEVER`, `--no-compile`) by default, which is verified end-to-end on `TPU v6e-1`. For ~3x faster warm total generation (`16.72s` vs `49.08s` at `848x1200`, 55 steps; `16.43s` vs `48.61s` denoising-only) and ~8 GiB lower peak HBM (`16.3 GiB` vs `24.5 GiB`), pass `--eager-mode defer_and_fuse`. Pass `--compile` only for experimental DiT compilation debugging (`e0200: RuntimeUnexpectedCoreHalt`).
 
 ### Eager / Defer-and-Fuse Benchmarking

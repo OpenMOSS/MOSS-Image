@@ -14,7 +14,7 @@ import torch
 from huggingface_hub import snapshot_download
 
 from inference_runtime import model_source
-from tpu import tpu_qwen35
+from tpu import model_cache, tpu_qwen35
 
 CACHED_PROMPTS = 8
 DEFAULT_PROMPT_BUCKETS = (512, 1024, 2048, 4096)
@@ -71,10 +71,18 @@ def resolve_model_bundle(model, *, local_files_only=False, components=TEXT_COMPO
     path = Path(source)
     if path.is_dir():
         return path
+    patterns = ["pipeline_moss_image.py", "model_index.json", *(f"{name}/*" for name in components)]
+    if is_available():
+        ram_path = model_cache.download_to_ram(
+            source, patterns, components, host_memory_info_gib()["available_gib"],
+            local_files_only=local_files_only,
+        )
+        if ram_path is not None:
+            return ram_path
     return Path(snapshot_download(
         source,
         local_files_only=local_files_only,
-        allow_patterns=["pipeline_moss_image.py", "model_index.json", *(f"{name}/*" for name in components)],
+        allow_patterns=patterns,
     ))
 
 
