@@ -26,6 +26,10 @@ def model_source(model):
 
 
 def load_pipeline(model, local_files_only=False):
+    from tpu import tpu_runtime
+
+    if tpu_runtime.is_available():
+        return tpu_runtime.load_pipeline(model, local_files_only=local_files_only)
     return diffusers.DiffusionPipeline.from_pretrained(
         model_source(model),
         custom_pipeline="pipeline_moss_image",
@@ -47,6 +51,13 @@ def cuda_budget_gib():
 
 
 def configure_pipeline(pipe, offload="auto", compile_transformer=False):
+    from tpu import tpu_runtime
+
+    if isinstance(pipe, tpu_runtime.StagedTPUImagePipeline):
+        pipe.configure_offload(offload)
+        if compile_transformer:
+            pipe.enable_transformer_compile()
+        return pipe
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if offload == "auto":
         budget = cuda_budget_gib() if device == "cuda" else 0
