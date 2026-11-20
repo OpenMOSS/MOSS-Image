@@ -24,6 +24,7 @@ VALID_MATMUL_PRECISIONS = ("highest", "high", "medium")
 VALID_OFFLOAD_MODES = ("auto", "model", "staged", "none")
 VALID_STAGE_SWITCH_MODES = ("auto", "drop_tpu", "d2h")
 DEFAULT_DROP_TPU_MIN_HOST_GIB = 36.0
+DEFAULT_RESIDENT_VAE_MIN_HBM_GIB = 20.0
 TEXT_COMPONENTS = ("text_encoder", "tokenizer")
 DIFFUSION_COMPONENTS = ("transformer", "vae", "scheduler")
 
@@ -277,6 +278,19 @@ def resolve_stage_switch_mode(
     return "d2h"
 
 
+def should_keep_vae_resident(
+    device: torch.device,
+    *,
+    budget_gib: float | None = None,
+    min_hbm_gib: float = DEFAULT_RESIDENT_VAE_MIN_HBM_GIB,
+) -> bool:
+    """Keep VAE resident across diffusion <-> text switches only when TPU HBM has headroom."""
+    if device.type != "tpu":
+        return True
+    hbm = tpu_budget_gib() if budget_gib is None else budget_gib
+    return hbm <= 0.0 or hbm >= min_hbm_gib
+
+
 def _snapshot_module_cpu_weights(module: torch.nn.Module) -> dict[str, list]:
     """Capture references to frozen CPU parameters and buffers (copying only if not on CPU)."""
     param_entries: list[tuple[torch.nn.Module, str, int, bool, torch.Tensor]] = []
@@ -315,6 +329,9 @@ def _snapshot_module_cpu_weights(module: torch.nn.Module) -> dict[str, list]:
 
 def _release_module_to_meta(module: torch.nn.Module) -> None:
     """Release device parameter/buffer storage onto zero-byte meta tensors without D2H copy."""
+    clear_cache = getattr(module, "clear_tpu_cache", None)
+    if callable(clear_cache):
+        clear_cache()
     meta_params: dict[int, torch.nn.Parameter] = {}
     meta_buffers: dict[int, torch.Tensor] = {}
     for submod in module.modules():
@@ -609,11 +626,17 @@ _NEW_ROPE_FORWARD = """    def forward(self, height, width, text_length, device,
 _OLD_TRANSFORMER_INIT_TAIL = """        self.video_head_modulation = nn.Linear(dim, 2 * dim)"""
 
 _NEW_TRANSFORMER_INIT_TAIL = """        self.video_head_modulation = nn.Linear(dim, 2 * dim)
+        self._tpu_text_cond_cache = []
         self.register_buffer(
             '_tpu_time_freq',
             self._build_tpu_time_freq(freq_dim // 2, torch.device('cpu')),
             persistent=False,
         )
+
+    def clear_tpu_cache(self):
+        cache = getattr(self, '_tpu_text_cond_cache', None)
+        if cache is not None:
+            cache.clear()
 
     @staticmethod
     def _build_tpu_time_freq(half, device):
@@ -622,6 +645,7 @@ _NEW_TRANSFORMER_INIT_TAIL = """        self.video_head_modulation = nn.Linear(d
 
     def _apply(self, fn, recurse=True):
         super()._apply(fn, recurse=recurse)
+        self.clear_tpu_cache()
         freq = getattr(self, '_tpu_time_freq', None)
         if freq is not None and not freq.is_meta and freq.dtype != torch.float32:
             self._tpu_time_freq = self._build_tpu_time_freq(self.config.freq_dim // 2, freq.device)
@@ -684,7 +708,60 @@ _OLD_TRANSFORMER_FORWARD = """    def forward(self, hidden_states, timestep, enc
         sample = torch.cat(outputs)
         return Transformer2DModelOutput(sample=sample) if return_dict else (sample,)"""
 
-_NEW_TRANSFORMER_FORWARD = """    def forward(self, hidden_states, timestep, encoder_hidden_states,
+_NEW_TRANSFORMER_FORWARD = """    def _get_or_compute_static_text_cond(
+        self, encoder_hidden_states, mask, index, height, width, video_dtype, device,
+        image_valid, is_compiling, validate_mask,
+    ):
+        use_cache = not is_compiling and not self.training
+        cache = getattr(self, '_tpu_text_cond_cache', None)
+        text_weight = self.text_embedder.proj.weight
+        if use_cache and cache is not None:
+            for entry in cache:
+                if (
+                    entry[0] is encoder_hidden_states
+                    and entry[1] is mask
+                    and entry[2] == (index, height, width)
+                    and entry[3] == video_dtype
+                    and _same_device(entry[4], device)
+                    and entry[5] is text_weight
+                ):
+                    return entry[6], entry[7], entry[8]
+
+        valid_mask = mask[index:index + 1].ne(0)
+        if validate_mask and not torch.any(valid_mask):
+            raise ValueError('Each sample needs at least one valid text token.')
+        zero = encoder_hidden_states.new_zeros(())
+        context = torch.where(valid_mask.unsqueeze(-1), encoder_hidden_states[index:index + 1], zero)
+        mask_i32 = valid_mask[0].to(torch.int32)
+        true_len = mask_i32.sum().to(torch.float32)
+        text_pos = (mask_i32.cumsum(0) - 1).clamp(min=0).to(torch.float32)
+        text_len = encoder_hidden_states.shape[1]
+        rope = self.rope(
+            height,
+            width,
+            text_len,
+            device,
+            text_positions=text_pos,
+            text_offset=true_len,
+        ).to(video_dtype)
+        joint_len = height * width + text_len
+        text_mask_1d = valid_mask[:, None, None, :]
+        text_attn_mask = text_mask_1d.expand(1, 1, text_len, text_len)
+        joint_attn_mask = torch.cat((image_valid, text_mask_1d), dim=-1).expand(
+            1, 1, joint_len, joint_len
+        )
+        text = self.text_embedder(context, rope[:, height * width:], attn_mask=text_attn_mask)
+
+        if use_cache and cache is not None:
+            if len(cache) >= 2:
+                cache.pop(0)
+            cache.append((
+                encoder_hidden_states, mask, (index, height, width), video_dtype, device,
+                text_weight, rope, joint_attn_mask, text,
+            ))
+        return rope, joint_attn_mask, text
+
+    def forward(self, hidden_states, timestep, encoder_hidden_states,
                 encoder_attention_mask=None, return_dict=True, skip_layers=None):
         skip_layers = _validate_skip_layers(skip_layers, len(self.layers))
         if hidden_states.ndim != 4 or hidden_states.shape[1] != self.config.latent_channels:
@@ -736,30 +813,18 @@ _NEW_TRANSFORMER_FORWARD = """    def forward(self, hidden_states, timestep, enc
             video = hidden_states[index:index + 1].flatten(2).transpose(1, 2)
             video = self.video_embedder(video.to(self.video_embedder.weight.dtype).contiguous())
             if use_static_mask:
-                valid_mask = mask[index:index + 1].ne(0)
-                if validate_mask and not torch.any(valid_mask):
-                    raise ValueError('Each sample needs at least one valid text token.')
-                zero = encoder_hidden_states.new_zeros(())
-                context = torch.where(valid_mask.unsqueeze(-1), encoder_hidden_states[index:index + 1], zero)
-                mask_i32 = valid_mask[0].to(torch.int32)
-                true_len = mask_i32.sum().to(torch.float32)
-                text_pos = (mask_i32.cumsum(0) - 1).clamp(min=0).to(torch.float32)
-                rope = self.rope(
+                rope, joint_attn_mask, text = self._get_or_compute_static_text_cond(
+                    encoder_hidden_states,
+                    mask,
+                    index,
                     height,
                     width,
-                    encoder_hidden_states.shape[1],
+                    video.dtype,
                     hidden_states.device,
-                    text_positions=text_pos,
-                    text_offset=true_len,
-                ).to(video.dtype)
-                text_len = encoder_hidden_states.shape[1]
-                joint_len = height * width + text_len
-                text_mask_1d = valid_mask[:, None, None, :]
-                text_attn_mask = text_mask_1d.expand(1, 1, text_len, text_len)
-                joint_attn_mask = torch.cat((image_valid, text_mask_1d), dim=-1).expand(
-                    1, 1, joint_len, joint_len
+                    image_valid,
+                    is_compiling,
+                    validate_mask,
                 )
-                text = self.text_embedder(context, rope[:, height * width:], attn_mask=text_attn_mask)
             else:
                 context = encoder_hidden_states[index:index + 1, mask[index].bool()]
                 if context.shape[1] == 0:
@@ -778,6 +843,53 @@ _NEW_TRANSFORMER_FORWARD = """    def forward(self, hidden_states, timestep, enc
             outputs.append(x.transpose(1, 2).reshape(1, -1, height, width))
         sample = torch.cat(outputs)
         return Transformer2DModelOutput(sample=sample) if return_dict else (sample,)"""
+
+_OLD_PIPELINE_DENOISE_LOOP = """        self.scheduler.set_timesteps(num_inference_steps, device=device)
+        num_steps = len(self.scheduler.timesteps)
+        for step_index, timestep in enumerate(self.progress_bar(self.scheduler.timesteps)):
+            skip_active = slg_start <= step_index / num_steps < slg_stop
+            # CFG must combine fp32 predictions, even when the DiT runs in bf16.
+            # Converting only the combined velocity would preserve rounding errors.
+            prediction = self.transformer(latents, timestep, positive, positive_mask).sample.float()
+            conditional = prediction
+            if do_cfg:
+                skip_kwargs = {'skip_layers': uncond_skip_layers} if uncond_skip_layers and skip_active else {}
+                uncond = self.transformer(latents, timestep, negative, negative_mask, **skip_kwargs).sample.float()
+                prediction = uncond + guidance_scale * (prediction - uncond)
+            if slg_layers and slg_scale > 0 and skip_active:
+                skipped = self.transformer(
+                    latents, timestep, positive, positive_mask, skip_layers=slg_layers).sample.float()
+                if not do_cfg:
+                    prediction = skipped
+                prediction = prediction + slg_scale * (conditional - skipped)
+            latents = self.scheduler.step(prediction, timestep, latents, return_dict=False)[0]"""
+
+_NEW_PIPELINE_DENOISE_LOOP = """        self.scheduler.set_timesteps(num_inference_steps, device=device)
+        if hasattr(self.scheduler, 'set_begin_index'):
+            self.scheduler.set_begin_index(0)
+        num_steps = len(self.scheduler.timesteps)
+        try:
+            for step_index, timestep in enumerate(self.progress_bar(self.scheduler.timesteps)):
+                skip_active = slg_start <= step_index / num_steps < slg_stop
+                # CFG must combine fp32 predictions, even when the DiT runs in bf16.
+                # Converting only the combined velocity would preserve rounding errors.
+                prediction = self.transformer(latents, timestep, positive, positive_mask).sample.float()
+                conditional = prediction
+                if do_cfg:
+                    skip_kwargs = {'skip_layers': uncond_skip_layers} if uncond_skip_layers and skip_active else {}
+                    uncond = self.transformer(latents, timestep, negative, negative_mask, **skip_kwargs).sample.float()
+                    prediction = uncond + guidance_scale * (prediction - uncond)
+                if slg_layers and slg_scale > 0 and skip_active:
+                    skipped = self.transformer(
+                        latents, timestep, positive, positive_mask, skip_layers=slg_layers).sample.float()
+                    if not do_cfg:
+                        prediction = skipped
+                    prediction = prediction + slg_scale * (conditional - skipped)
+                latents = self.scheduler.step(prediction, timestep, latents, return_dict=False)[0]
+        finally:
+            clear_cache = getattr(self.transformer, 'clear_tpu_cache', None)
+            if callable(clear_cache):
+                clear_cache()"""
 
 
 _PATCHES = (
@@ -801,10 +913,18 @@ _PATCHES = (
 )
 
 
+_OPTIONAL_PATCHES = (
+    ("MOSSImagePipeline.__call__ denoise loop", _OLD_PIPELINE_DENOISE_LOOP, _NEW_PIPELINE_DENOISE_LOOP),
+)
+
+
 def _patch_pipeline_source(text: str) -> str:
     patched = text
     for label, old, new in _PATCHES:
         patched = _replace_once(patched, old, new, label)
+    for label, old, new in _OPTIONAL_PATCHES:
+        if old in patched:
+            patched = _replace_once(patched, old, new, label)
     return patched
 
 
@@ -1089,9 +1209,14 @@ class StagedTPUImagePipeline:
             desired = available & {"transformer", "vae"}
         elif stage == "text":
             desired = available & {"text_encoder"}
-            # Keep the lightweight VAE (~0.3 GiB) resident once loaded across diffusion <-> text switches,
-            # while avoiding unnecessary VAE loading on cold cpu -> text runs (e.g. encode-only).
-            if "vae" in self._tpu_resident_modules and "vae" in available:
+            # Keep the lightweight VAE (~0.3 GiB) resident across diffusion <-> text switches on
+            # TPUs with >= 20 GiB HBM (e.g. v6e-1), while evicting it on 16 GiB TPUs (v5e-1) so
+            # Qwen3.5-9B (15.63 GiB) does not OOM on interactive prompt switches.
+            if (
+                "vae" in self._tpu_resident_modules
+                and "vae" in available
+                and should_keep_vae_resident(self._runtime_device)
+            ):
                 desired.add("vae")
         else:
             raise ValueError(f"Unknown TPU stage: {stage!r}.")

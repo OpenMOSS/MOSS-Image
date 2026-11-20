@@ -1149,6 +1149,95 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(update_fns), 1)
         self.assertEqual(update_fns[0]("none"), {"value": False, "interactive": False})
 
+    def test_static_text_cond_cache_reuses_across_steps_and_clears_on_meta_offload(self):
+        raw = _sample_upstream_pipeline_source()
+        patched_mod = _load_module_from_source(
+            tpu_runtime._patch_pipeline_source(raw), "test_text_cond_cache_mod"
+        )
+        torch.manual_seed(7)
+        model = patched_mod.MOSSImageTransformer(
+            dim=64, ffn_dim=128, num_heads=4, num_layers=2, text_dim=32, freq_dim=64, latent_channels=16
+        ).eval()
+        model._force_tpu_timestep_sinusoid = True
+        model._static_attention_masking = True
+
+        latents = torch.randn(1, 16, 4, 4, dtype=torch.float32)
+        pos_emb = torch.randn(1, 8, 32, dtype=torch.float32)
+        pos_mask = torch.tensor([[1, 1, 1, 1, 1, 0, 0, 0]], dtype=torch.bool)
+        neg_emb = torch.randn(1, 8, 32, dtype=torch.float32)
+        neg_mask = torch.tensor([[1, 1, 0, 0, 0, 0, 0, 0]], dtype=torch.bool)
+
+        with torch.no_grad():
+            ref_pos = model(latents, 500.0, pos_emb, pos_mask).sample.clone()
+            ref_neg = model(latents, 500.0, neg_emb, neg_mask, skip_layers=(1,)).sample.clone()
+
+        model.clear_tpu_cache()
+        text_calls = 0
+        orig_text_forward = model.text_embedder.forward
+
+        def counting_text_forward(*args, **kwargs):
+            nonlocal text_calls
+            text_calls += 1
+            return orig_text_forward(*args, **kwargs)
+
+        with mock.patch.object(model.text_embedder, "forward", side_effect=counting_text_forward):
+            with torch.no_grad():
+                out_pos_0 = model(latents, 500.0, pos_emb, pos_mask).sample
+                out_neg_0 = model(latents, 500.0, neg_emb, neg_mask, skip_layers=(1,)).sample
+                _ = model(latents, 400.0, pos_emb, pos_mask).sample
+                _ = model(latents, 400.0, neg_emb, neg_mask, skip_layers=(1,)).sample
+
+        # 2 prompts across 2 timesteps must compute text_embedder only once per prompt.
+        self.assertEqual(text_calls, 2)
+        torch.testing.assert_close(out_pos_0, ref_pos)
+        torch.testing.assert_close(out_neg_0, ref_neg)
+
+        self.assertEqual(len(model._tpu_text_cond_cache), 2)
+        tpu_runtime._release_module_to_meta(model)
+        self.assertEqual(len(model._tpu_text_cond_cache), 0)
+
+    def test_hbm_budget_gates_resident_vae_across_prompt_switches(self):
+        tpu_dev = SimpleNamespace(type="tpu")
+        cpu_dev = torch.device("cpu")
+
+        self.assertTrue(tpu_runtime.should_keep_vae_resident(cpu_dev))
+        self.assertFalse(tpu_runtime.should_keep_vae_resident(tpu_dev, budget_gib=15.75))
+        self.assertTrue(tpu_runtime.should_keep_vae_resident(tpu_dev, budget_gib=31.24))
+
+        base = _FakeBasePipeline()
+        with (
+            mock.patch.object(tpu_runtime, "empty_cache"),
+            mock.patch.object(tpu_runtime, "synchronize"),
+            mock.patch.object(tpu_runtime, "configure_eager_mode"),
+            mock.patch.object(tpu_runtime, "configure_precision"),
+            mock.patch.object(tpu_runtime, "should_keep_vae_resident", return_value=False),
+        ):
+            pipe = tpu_runtime.StagedTPUImagePipeline(
+                base,
+                pipeline_file=Path(__file__),
+                device=torch.device("cpu"),
+                offload="model",
+                stage_switch_mode="drop_tpu",
+                prompt_buckets=(8,),
+            )
+            pipe._force_drop_tpu_for_test = True
+            pipe("first prompt", num_inference_steps=2, guidance_scale=1.0)
+            pipe.reset_stage_switch_history()
+            pipe("second prompt", num_inference_steps=2, guidance_scale=1.0)
+            history = pipe.stage_switch_history
+            self.assertEqual(history[0]["offload_modules"], ["transformer", "vae"])
+            self.assertEqual(history[1]["load_modules"], ["transformer", "vae"])
+
+    def test_pipeline_denoise_loop_patch_sets_begin_index_and_clears_cache(self):
+        patched = tpu_runtime._patch_pipeline_source(
+            _sample_upstream_pipeline_source()
+            + "\n    def _dummy_call(self):\n"
+            + tpu_runtime._OLD_PIPELINE_DENOISE_LOOP
+            + "\n"
+        )
+        self.assertIn("self.scheduler.set_begin_index(0)", patched)
+        self.assertIn("clear_tpu_cache", patched)
+
 
 if __name__ == "__main__":
     unittest.main()
