@@ -30,7 +30,7 @@
 
 | 元の CUDA BF16 参照画像 | TPU `v6e-1` BF16 生成画像 |
 | :---: | :---: |
-| <img src="assets/cuda_bf16_ref.png" alt="元の CUDA BF16 参照画像" width="360"> | <img src="assets/tpu_v6e_pallas.png" alt="TPU v6e-1 BF16 生成画像" width="360"> |
+| <img src="assets/cuda_bf16_ref.webp" alt="元の CUDA BF16 参照画像" width="360"> | <img src="assets/tpu_v6e_pallas.webp" alt="TPU v6e-1 BF16 生成画像" width="360"> |
 
 - **画素一致度**：CUDA BF16 比でコサイン類似度 **0.9980**、平均画素誤差 **6.15 / 255**（`PSNR 26.80 dB`）；`drop_tpu` offload 使用時は `d2h` と完全一致（類似度 **1.0**、最大誤差 **0**）。
 

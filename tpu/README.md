@@ -30,7 +30,7 @@
 
 | 原版 CUDA BF16 参考图 | TPU `v6e-1` BF16 生成图 |
 | :---: | :---: |
-| <img src="assets/cuda_bf16_ref.png" alt="原版 CUDA BF16 参考图" width="360"> | <img src="assets/tpu_v6e_pallas.png" alt="TPU v6e-1 BF16 生成图" width="360"> |
+| <img src="assets/cuda_bf16_ref.webp" alt="原版 CUDA BF16 参考图" width="360"> | <img src="assets/tpu_v6e_pallas.webp" alt="TPU v6e-1 BF16 生成图" width="360"> |
 
 - **像素一致性**：与原版 CUDA BF16 余弦相似度 **0.9980**，平均像素差 **6.15 / 255**（`PSNR 26.80 dB`）；开启 `drop_tpu` offload 后输出完全无损（余弦 **1.0**，最大像素差 **0**）。
 

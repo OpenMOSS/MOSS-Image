@@ -30,7 +30,7 @@ Same prompt and seed (`848×1200`, 55 steps, `seed = 136879772936584`):
 
 | Original CUDA BF16 Reference | TPU `v6e-1` BF16 Generated |
 | :---: | :---: |
-| <img src="assets/cuda_bf16_ref.png" alt="Original CUDA BF16 Reference" width="360"> | <img src="assets/tpu_v6e_pallas.png" alt="TPU v6e-1 BF16 Generated Image" width="360"> |
+| <img src="assets/cuda_bf16_ref.webp" alt="Original CUDA BF16 Reference" width="360"> | <img src="assets/tpu_v6e_pallas.webp" alt="TPU v6e-1 BF16 Generated Image" width="360"> |
 
 - **Pixel parity**: Cosine similarity **0.9980** vs. CUDA BF16, mean pixel difference **6.15 / 255** (`PSNR 26.80 dB`); `drop_tpu` offload matches `d2h` exactly (cosine **1.0**, max diff **0**).
 
